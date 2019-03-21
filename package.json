@@ -1,0 +1,32 @@
+{
+  "name": "blog-service",
+  "version": "0.0.0",
+  "description": "my blog's rear end project",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsc && node dist/index.js",
+    "watch-server": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'ts-node' ./src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kindboy/blog-service.git"
+  },
+  "author": "lifang <im.lfanglee@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kindboy/blog-service/issues"
+  },
+  "homepage": "https://github.com/kindboy/blog-service#readme",
+  "dependencies": {
+    "koa": "^2.7.0",
+    "koa-router": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.0.48",
+    "@types/koa-router": "^7.0.40",
+    "nodemon": "^1.18.10",
+    "ts-node": "^8.0.3",
+    "typescript": "^3.3.4000"
+  }
+}
