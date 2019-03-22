@@ -4,8 +4,15 @@
   "description": "my blog's rear end project",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node dist/index.js",
-    "watch-server": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'ts-node' ./src/index.ts",
+    "start": "npm run server",
+    "dev": "npm run watch-server",
+    "build": "npm run build-ts && npm run lint",
+    "server": "node dist/server.js",
+    "watch-server": "nodemon --watch ./src -e ts,tsx --exec ts-node ./src/server.ts",
+    "debug": "nodemon --watch ./src -e ts,tsx --exec node --inspect=5858 -r ts-node/register ./src/server.ts",
+    "build-ts": "tsc",
+    "watch-ts": "tsc -w",
+    "lint": "eslint src --ext ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,14 +26,30 @@
   },
   "homepage": "https://github.com/kindboy/blog-service#readme",
   "dependencies": {
+    "dotenv": "^7.0.0",
     "koa": "^2.7.0",
-    "koa-router": "^7.4.0"
+    "koa-bodyparser": "^4.2.1",
+    "koa-helmet": "^4.1.0",
+    "koa-router": "^7.4.0",
+    "mongoose": "^5.4.19"
   },
   "devDependencies": {
+    "@types/dotenv": "^6.1.0",
     "@types/koa": "^2.0.48",
+    "@types/koa-bodyparser": "^4.2.2",
+    "@types/koa-helmet": "^3.1.2",
     "@types/koa-router": "^7.0.40",
+    "@types/mongoose": "^5.3.23",
+    "@typescript-eslint/parser": "^1.5.0",
+    "eslint": "^5.15.3",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-import-resolver-typescript": "^1.1.1",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-typescript": "^0.14.0",
     "nodemon": "^1.18.10",
     "ts-node": "^8.0.3",
-    "typescript": "^3.3.4000"
+    "tsc": "^1.20150623.0+f2044a901165a2a97813772353b57dd9ed4796ca",
+    "typescript": "^3.3.4000",
+    "typescript-eslint-parser": "^22.0.0"
   }
 }

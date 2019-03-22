@@ -3,8 +3,11 @@
         "module": "commonjs",
         "target": "es2017",
         "noImplicitAny": true,
+        "emitDecoratorMetadata": true,   // 开启修饰器
+        "experimentalDecorators": true,  // 开启修饰器,
         "moduleResolution": "node",
         "sourceMap": true,
+        "removeComments": true,
         "outDir": "dist",
         "baseUrl": ".",
         "paths": {
@@ -16,5 +19,9 @@
     },
     "include": [
         "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
     ]
 }
