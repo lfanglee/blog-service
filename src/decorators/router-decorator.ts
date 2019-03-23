@@ -7,29 +7,37 @@ export enum RequestMethod {
 
 type Method = RequestMethod;
 
-export function Request({ url, method }: { url: string, method: Method}): MethodDecorator {
-    return (target: any, handleFun: string, descriptor: PropertyDescriptor) => {
-        if (!target['$route']) {
-            target['$route'] = {};
-        }
-        if (!target.$route[method]) {
-            target.$route[method] = {};
-        }
-        target.$route[method][url] = {
-            url,
-            handleFun
-        };
+export function Request({ path, method }: { path: string, method: Method}): MethodDecorator {
+    return (target: any, key: string, descriptor: PropertyDescriptor) => {
+        target[key]['$method'] = method;
+        target[key]['$path'] = path;
     };
 }
 
 export function Controller(options: Router.IRouterOptions = {}): ClassDecorator {
-    return target => {
-        const router = new Router(options);
-        Object.keys((<any>target).route).forEach(method => {
-            Object.keys((<any>target).route[method]).forEach(url => {
-                const route = (<any>target).route[method][url];
-                (<any>router)[method](url, (<any>target)[route.handleFun]);
-            });
+    return (target: any) => {
+        target['$routerOpts'] = options;
+    };
+}
+
+export function mapRoute(target: any) {
+    const options = target['$routerOpts'];
+    const prototype = Object.getPrototypeOf(new target());
+    const myRoutes = Object.getOwnPropertyNames(prototype)
+        .filter(item => item !== 'constructor' && prototype[item] instanceof Function)
+        .map(methodName => {
+            const fn = prototype[methodName];
+            const route = fn['$path'];
+            const method = fn['$method'];
+            return {
+                route,
+                method,
+                fn,
+                methodName
+            };
         });
+    return {
+        ...options,
+        myRoutes
     };
 }

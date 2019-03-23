@@ -23,6 +23,7 @@
         "comma-dangle": ["error", "only-multiline"],
         "arrow-parens": "off",
         "dot-notation": "off",
+        "new-cap": "off",
 
         "no-var": ["error"],
         "no-new-object": ["error"],
