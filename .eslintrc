@@ -21,6 +21,8 @@
         "space-before-blocks": ["warn"],
         "spaced-comment": ["warn"],
         "comma-dangle": ["error", "only-multiline"],
+        "arrow-parens": "off",
+        "dot-notation": "off",
 
         "no-var": ["error"],
         "no-new-object": ["error"],
@@ -30,6 +32,9 @@
         "no-new-func": ["error"],
         "no-param-reassign": "off",
         "no-console": "off",
+        
+        "class-methods-use-this": "off",
+        "func-names": "off",
 
         "typescript/no-unused-vars": ["warn"]
     },

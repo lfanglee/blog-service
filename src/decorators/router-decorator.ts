@@ -1,35 +1,35 @@
-import * as KoaRouter from 'koa-router';
+import * as Router from 'koa-router';
 
-type Method = 'get' | 'post';
+export enum RequestMethod {
+    GET = 'get',
+    POST = 'post'
+}
 
-export const RequestMethod = {
-    GET: 'get',
-    POST: 'post'
-};
+type Method = RequestMethod;
 
-export function Request({ url: string, method: Method }) {
-    return (_target: any, _key: string, descriptor: PropertyDescriptor) => {
-        const fn = descriptor.value;
-        descriptor.value = (router) => {
-            router[method](url, async (ctx, next) => {
-                await fn(ctx, next);
-            });
+export function Request({ url, method }: { url: string, method: Method}): MethodDecorator {
+    return (target: any, handleFun: string, descriptor: PropertyDescriptor) => {
+        if (!target['$route']) {
+            target['$route'] = {};
+        }
+        if (!target.$route[method]) {
+            target.$route[method] = {};
+        }
+        target.$route[method][url] = {
+            url,
+            handleFun
         };
     };
 }
 
-export function Controller({ prefix: string }) {
-    const router = new KoaRouter();
-    if (prefix) {
-        router.prefix(prefix);
-    }
-    return (target) => {
-        const reqList = Object.getOwnPropertyDescriptors(target.prototype);
-        Object.entries(reqList).forEach(([k, v]) => {
-            if (k !== 'constructor') {
-                v(router);
-            }
+export function Controller(options: Router.IRouterOptions = {}): ClassDecorator {
+    return target => {
+        const router = new Router(options);
+        Object.keys((<any>target).route).forEach(method => {
+            Object.keys((<any>target).route[method]).forEach(url => {
+                const route = (<any>target).route[method][url];
+                (<any>router)[method](url, (<any>target)[route.handleFun]);
+            });
         });
-        return router;
-    }
+    };
 }
