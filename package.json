@@ -32,7 +32,6 @@
     "koa-helmet": "^4.1.0",
     "koa-router": "^7.4.0",
     "mongodb": "^3.2.2",
-    "mongoose": "^5.4.19",
     "reflect-metadata": "^0.1.13",
     "typeorm": "^0.2.15"
   },
