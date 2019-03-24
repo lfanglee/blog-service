@@ -63,6 +63,6 @@ export const Post = (path: string) => Request({ path, method: RequestMethod.POST
 
 export const Put = (path: string) => Request({ path, method: RequestMethod.PUT });
 
-export const Del = (path: string) => Request({ path, method: RequestMethod.PUT });
+export const Del = (path: string) => Request({ path, method: RequestMethod.DEL });
 
 export const All = (path: string) => Request({ path, method: RequestMethod.ALL });
