@@ -1,24 +1,35 @@
 import * as Router from 'koa-router';
 
-import { mapRoute } from '../decorators/router-decorator';
-import test from './test';
+import { mapRoute, RouteItem, Routes } from '../decorators/router-decorator';
+import Test from './test';
+import Article from './article';
 
 const router = new Router({
     prefix: '/api'
 });
 
-router.get('/ii', async (ctx) => {
-    ctx.body = 'Hello, World!';
-});
+class Controller {
+    router: Router = router
 
-function createAction(actions: any) {
-    const { prefix = '', myRoutes = [] } = actions;
-    myRoutes.forEach((item: any) => {
-        (<any>router)[item.method](`${prefix}${item.route}`, item.fn);
-    });
-    console.log(router);
+    routes: Array<any> = [Test, Article]
+
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        this.routes.forEach((routes: Routes) => {
+            this.createAction(mapRoute(routes));
+        });
+        console.log(this.router);
+    }
+
+    createAction(actions: Routes) {
+        const { prefix = '', RoutesList = [] } = actions;
+        RoutesList.forEach((item: RouteItem) => {
+            this.router[item.method](`${prefix}${item.route}`, item.fn);
+        });
+    }
 }
-console.log(mapRoute(test));
-createAction(mapRoute(test));
 
-export default router;
+export default new Controller().router;

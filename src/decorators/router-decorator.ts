@@ -2,10 +2,25 @@ import * as Router from 'koa-router';
 
 export enum RequestMethod {
     GET = 'get',
-    POST = 'post'
+    POST = 'post',
+    PUT = 'put',
+    DEL = 'del',
+    ALL = 'all'
 }
 
 type Method = RequestMethod;
+
+export interface RouteItem {
+    route: string,
+    method: Method,
+    fn: Router.IMiddleware,
+    methodName: string
+}
+export interface Routes {
+    prefix?: string,
+    RoutesList: Array<RouteItem>
+    [key: string]: any
+}
 
 export function Request({ path, method }: { path: string, method: Method}): MethodDecorator {
     return (target: any, key: string, descriptor: PropertyDescriptor) => {
@@ -20,10 +35,10 @@ export function Controller(options: Router.IRouterOptions = {}): ClassDecorator 
     };
 }
 
-export function mapRoute(target: any) {
+export function mapRoute(target: any): Routes {
     const options = target['$routerOpts'];
     const prototype = Object.getPrototypeOf(new target());
-    const myRoutes = Object.getOwnPropertyNames(prototype)
+    const RoutesList = Object.getOwnPropertyNames(prototype)
         .filter(item => item !== 'constructor' && prototype[item] instanceof Function)
         .map(methodName => {
             const fn = prototype[methodName];
@@ -38,6 +53,16 @@ export function mapRoute(target: any) {
         });
     return {
         ...options,
-        myRoutes
+        RoutesList
     };
 }
+
+export const Get = (path: string) => Request({ path, method: RequestMethod.GET });
+
+export const Post = (path: string) => Request({ path, method: RequestMethod.POST });
+
+export const Put = (path: string) => Request({ path, method: RequestMethod.PUT });
+
+export const Del = (path: string) => Request({ path, method: RequestMethod.PUT });
+
+export const All = (path: string) => Request({ path, method: RequestMethod.ALL });
