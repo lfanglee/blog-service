@@ -21,7 +21,6 @@ class Controller {
         this.routes.forEach((routes: Routes) => {
             this.createAction(mapRoute(routes));
         });
-        console.log(this.router);
     }
 
     createAction(actions: Routes) {

@@ -1,29 +1,35 @@
-import * as mongoose from 'mongoose';
+import { createConnection, Connection, ConnectionOptions } from 'typeorm';
+import { join } from 'path';
 import { config } from '../config';
 import { log } from './index';
+import Test from '../entity/test';
 
-(<any>mongoose).Promise = global.Promise;
+const parentDir = join(__dirname, '..');
 
-export const db = mongoose;
-
-export const connect = (callback?: Function) => {
-    const connectString = `mongodb://${config.user}:${config.password}@${config.serverName}:${config.databasePort}/${config.database}`;
-    const options = {
-        useNewUrlParser: true,
-        useCreateIndex: true
-    };
-    mongoose.connect(connectString, options, (err) => {
-        if (err) {
-            log(`${err}, mongodb Authentication failed`, 'error');
-        }
-    });
-    mongoose.connection.on('open', () => {
-        log('mongodb load success...');
-        callback && callback();
-    });
-    mongoose.connection.on('error', (err) => {
-        log(`${err} mongodb connect error`, 'error');
-    });
-
-    return mongoose;
+const connectionOpts: ConnectionOptions = {
+    type: 'mongodb',
+    host: config.serverName,
+    port: config.databasePort,
+    username: config.user,
+    password: config.password,
+    database: config.database,
+    useNewUrlParser: true,
+    entities: [
+        `${parentDir}/entity/*.ts`,
+    ],
+    synchronize: true,
 };
+
+const connect: Promise<Connection> = createConnection(connectionOpts);
+
+connect.then(async (connection: Connection) => {
+    log('mongodb load success...');
+    const test = new Test();
+    test.name = 'test1';
+
+    await connection.manager.save(test);
+}).catch((err) => {
+    log(`${err} mongodb connect error`, 'error');
+});
+
+export default connect;

@@ -2,16 +2,17 @@ import * as Koa from 'koa';
 import * as dotenv from 'dotenv';
 import * as helmet from 'koa-helmet';
 import * as bodyParser from 'koa-bodyparser';
+import 'reflect-metadata';
 
-import * as mongodb from './utils/db';
+import connection from './utils/db';
 import router from './controller';
 import { config } from './config';
 
 dotenv.config({ path: '.env' });
 
-const app = new Koa();
+const app: Koa = new Koa();
 
-mongodb.connect();
+connection.then(() => {});
 
 app.use(helmet());
 app.use(bodyParser());

@@ -4,7 +4,7 @@ export enum RequestMethod {
     GET = 'get',
     POST = 'post',
     PUT = 'put',
-    DEL = 'del',
+    DEL = 'delete',
     ALL = 'all'
 }
 
