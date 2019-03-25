@@ -4,7 +4,10 @@ export enum RequestMethod {
     GET = 'get',
     POST = 'post',
     PUT = 'put',
-    DEL = 'delete',
+    DEL = 'del',
+    PATCH = 'patch',
+    HEAD = 'head',
+    OPTIONS = 'options',
     ALL = 'all'
 }
 
@@ -64,5 +67,11 @@ export const Post = (path: string) => Request({ path, method: RequestMethod.POST
 export const Put = (path: string) => Request({ path, method: RequestMethod.PUT });
 
 export const Del = (path: string) => Request({ path, method: RequestMethod.DEL });
+
+export const Patch = (path: string) => Request({ path, method: RequestMethod.PATCH });
+
+export const Head = (path: string) => Request({ path, method: RequestMethod.HEAD });
+
+export const Options = (path: string) => Request({ path, method: RequestMethod.OPTIONS });
 
 export const All = (path: string) => Request({ path, method: RequestMethod.ALL });

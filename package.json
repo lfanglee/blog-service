@@ -26,7 +26,9 @@
   },
   "homepage": "https://github.com/kindboy/blog-service#readme",
   "dependencies": {
+    "@types/fs-extra": "^5.0.5",
     "dotenv": "^7.0.0",
+    "fs-extra": "^7.0.1",
     "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",
     "koa-helmet": "^4.1.0",

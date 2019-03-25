@@ -20,16 +20,11 @@ const connectionOpts: ConnectionOptions = {
     synchronize: true,
 };
 
-const connect: Promise<Connection> = createConnection(connectionOpts);
-
-connect.then(async (connection: Connection) => {
-    log('mongodb load success...');
-    const test = new Test();
-    test.name = 'test1';
-
-    await connection.manager.save(test);
-}).catch((err) => {
-    log(`${err} mongodb connect error`, 'error');
-});
+const connect = () => createConnection(connectionOpts)
+    .then(async (connection: Connection) => {
+        log('mongodb load success...');
+    }).catch((err) => {
+        log(`${err} mongodb connect error`, 'error');
+    });
 
 export default connect;

@@ -1,7 +1,19 @@
-import * as fs from 'fs';
+import * as fs from 'fs-extra';
 import * as path from 'path';
 
 import { config } from '../config';
+
+export interface ResponseBody {
+    code: number,
+    message: string,
+    data: Object
+}
+
+export const resReturn = (data: Object, code: number = 1, message: string = '成功！') => ({
+    code,
+    message,
+    data
+});
 
 export const log = (msg: any, type: 'log' | 'warn' | 'error' = 'log') => {
     const logFn: Function = console[type]; // log, warn, error
