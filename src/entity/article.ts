@@ -28,16 +28,16 @@ export default class Article {
     content: string
 
     @Column()
-    state: number
+    state: number // 1 发布  2 草稿
 
     @Column()
-    publish: number
+    publish: number // 1 公开 2 私有
 
     @Column()
     thumb: string
 
     @Column()
-    type: string
+    type: string // 1 code
 
     @Column(type => Tag)
     tag: Tag[]
@@ -48,5 +48,6 @@ export default class Article {
     @UpdateDateColumn()
     update_at: Date
 
+    @Column()
     meta: Meta
 }

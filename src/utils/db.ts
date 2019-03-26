@@ -2,7 +2,6 @@ import { createConnection, Connection, ConnectionOptions } from 'typeorm';
 import { join } from 'path';
 import { config } from '../config';
 import { log } from './index';
-import Test from '../entity/test';
 
 const parentDir = join(__dirname, '..');
 

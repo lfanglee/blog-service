@@ -16,6 +16,8 @@ type Method = RequestMethod;
 export interface RouteItem {
     route: string,
     method: Method,
+    param: string,
+    middleware: Router.IParamMiddleware,
     fn: Router.IMiddleware,
     methodName: string
 }
@@ -25,10 +27,16 @@ export interface Routes {
     [key: string]: any
 }
 
-export function Request({ path, method }: { path: string, method: Method}): MethodDecorator {
+export function Request(
+    {
+        path, method, param, middleware
+    }: { path: string, method: Method, param?: string, middleware?: Router.IParamMiddleware }
+): MethodDecorator {
     return (target: any, key: string, descriptor: PropertyDescriptor) => {
         target[key]['$method'] = method;
         target[key]['$path'] = path;
+        target[key]['$param'] = param;
+        target[key]['$middleware'] = middleware;
     };
 }
 
@@ -47,9 +55,13 @@ export function mapRoute(target: any): Routes {
             const fn = prototype[methodName];
             const route = fn['$path'];
             const method = fn['$method'];
+            const param = fn['$param'];
+            const middleware = fn['$middleware'];
             return {
                 route,
                 method,
+                param,
+                middleware,
                 fn,
                 methodName
             };
@@ -60,18 +72,50 @@ export function mapRoute(target: any): Routes {
     };
 }
 
-export const Get = (path: string) => Request({ path, method: RequestMethod.GET });
+export const Get = (
+    path: string, param?: string, middleware?: Router.IParamMiddleware
+) => Request({
+    path, method: RequestMethod.GET, param, middleware
+});
 
-export const Post = (path: string) => Request({ path, method: RequestMethod.POST });
+export const Post = (
+    path: string, param?: string, middleware?: Router.IParamMiddleware
+) => Request({
+    path, method: RequestMethod.POST, param, middleware
+});
 
-export const Put = (path: string) => Request({ path, method: RequestMethod.PUT });
+export const Put = (
+    path: string, param?: string, middleware?: Router.IParamMiddleware
+) => Request({
+    path, method: RequestMethod.PUT, param, middleware
+});
 
-export const Del = (path: string) => Request({ path, method: RequestMethod.DEL });
+export const Del = (
+    path: string, param?: string, middleware?: Router.IParamMiddleware
+) => Request({
+    path, method: RequestMethod.DEL, param, middleware
+});
 
-export const Patch = (path: string) => Request({ path, method: RequestMethod.PATCH });
+export const Patch = (
+    path: string, param?: string, middleware?: Router.IParamMiddleware
+) => Request({
+    path, method: RequestMethod.PATCH, param, middleware
+});
 
-export const Head = (path: string) => Request({ path, method: RequestMethod.HEAD });
+export const Head = (
+    path: string, param?: string, middleware?: Router.IParamMiddleware
+) => Request({
+    path, method: RequestMethod.HEAD, param, middleware
+});
 
-export const Options = (path: string) => Request({ path, method: RequestMethod.OPTIONS });
+export const Options = (
+    path: string, param?: string, middleware?: Router.IParamMiddleware
+) => Request({
+    path, method: RequestMethod.OPTIONS, param, middleware
+});
 
-export const All = (path: string) => Request({ path, method: RequestMethod.ALL });
+export const All = (
+    path: string, param?: string, middleware?: Router.IParamMiddleware
+) => Request({
+    path, method: RequestMethod.ALL, param, middleware
+});

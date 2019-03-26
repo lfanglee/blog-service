@@ -9,7 +9,7 @@ export interface ResponseBody {
     data: Object
 }
 
-export const resReturn = (data: Object, code: number = 1, message: string = '成功！') => ({
+export const resReturn = (data: Object, code: number = 0, message: string = '成功！') => ({
     code,
     message,
     data

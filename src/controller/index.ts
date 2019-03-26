@@ -27,7 +27,9 @@ class Controller {
     createAction(actions: Routes) {
         const { prefix = '', RoutesList = [] } = actions;
         RoutesList.forEach((item: RouteItem) => {
-            this.router[item.method](`${prefix}${item.route}`, item.fn);
+            item.param
+                ? this.router.param(item.param, item.middleware)[item.method](`${prefix}${item.route}`, item.fn)
+                : this.router[item.method](`${prefix}${item.route}`, item.fn);
         });
     }
 }
