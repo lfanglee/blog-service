@@ -1,12 +1,15 @@
 import * as Koa from 'koa';
-import { MongoRepository, getMongoRepository } from 'typeorm';
+import { MongoRepository, getMongoRepository, ObjectLiteral } from 'typeorm';
 import { ObjectId } from 'mongodb';
+import { Validator, validate } from 'class-validator';
 import articleEntity from '../entity/article';
 import tagEntity from '../entity/tag';
 import {
-    Controller, Get, All, Post
+    Controller, Get, Post, Patch
 } from '../decorators/router-decorator';
 import { resReturn, log } from '../utils/index';
+
+const validator = new Validator();
 
 @Controller({ prefix: '/article' })
 export default class Article {
@@ -26,10 +29,11 @@ export default class Article {
             pageSize = 10
         } = ctx.query;
 
-        pageNo < 1 && (pageNo = 1);
-        if (pageSize <= 0) {
-            pageSize = -1;
+        if (!validator.isInt(+pageNo) || !validator.min(pageNo, 1)) {
             pageNo = 1;
+        }
+        if (!validator.isInt(+pageSize) || !validator.min(pageSize, 1)) {
+            pageSize = -1;
         }
 
         const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
@@ -39,7 +43,8 @@ export default class Article {
                 ? await articleRepo.find()
                 : await articleRepo.createEntityCursor()
                     .skip((pageNo - 1) * pageSize)
-                    .limit(pageSize);
+                    .limit(pageSize)
+                    .toArray();
             ctx.body = resReturn({
                 list: arts,
                 pagination: {
@@ -59,12 +64,18 @@ export default class Article {
      * 获取文章详情
      * @param artId 文章ID
      */
-    @Get('/:artId')
+    @Get('/:artId', 'artId', (artId, ctx, next) => {
+        if (!validator.isMongoId(artId)) {
+            ctx.status = 404;
+            return;
+        }
+        return next();
+    })
     async getArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
         const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
         try {
-            const art = await articleRepo.find(artId);
+            const art = await articleRepo.findOne(artId);
             if (!art) {
                 ctx.body = resReturn(null, 400, '文章不存在');
             }
@@ -108,14 +119,56 @@ export default class Article {
                 state,
                 publish,
                 type,
+                tag: tagsList,
                 meta: {
                     views: 0, comments: 0, likes: 0
                 }
             });
-            article.tag = tagsList;
-
+            const validateErr = await validate(article, { skipMissingProperties: true });
+            if (validateErr.length) {
+                ctx.body = resReturn(validateErr.map(e => e.constraints), 400, '文章发布失败');
+                return;
+            }
             await articleRepo.save(article);
             ctx.body = resReturn(article);
+        } catch (error) {
+            log(error, 'error');
+            ctx.body = resReturn(null, 500, '服务器内部错误');
+        }
+    }
+
+    @Patch('/:artId')
+    async updateArt(ctx: Koa.Context) {
+        const { artId } = ctx.params;
+        const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
+        try {
+            const article: articleEntity = await articleRepo.findOne(artId);
+            if (!article) {
+                ctx.body = resReturn(null, 400, '文章不存在');
+                return;
+            }
+            const updateData: ObjectLiteral = {};
+            if (ctx.request.body.tags) {
+                const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
+                const tagsList: tagEntity[] = await tagRepo.findByIds(
+                    ctx.request.body.tags.map((i: string) => new ObjectId(i))
+                );
+                updateData.tag = tagsList;
+            }
+            Object.entries(ctx.request.body).forEach(([k, v]) => {
+                if (['title', 'keyword', 'content', 'descript', 'thumb',
+                    'state', 'publish', 'type'].includes(k)) {
+                    updateData[k] = v;
+                }
+            });
+            const updateArticle: articleEntity = articleRepo.merge(article, updateData);
+            const validateErr = await validate(updateArticle, { skipMissingProperties: true });
+            if (validateErr.length) {
+                ctx.body = resReturn(validateErr.map(e => e.constraints), 400, '文章更新失败');
+                return;
+            }
+            await articleRepo.save(updateArticle);
+            ctx.body = resReturn(updateArticle);
         } catch (error) {
             log(error, 'error');
             ctx.body = resReturn(null, 500, '服务器内部错误');

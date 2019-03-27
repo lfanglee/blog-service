@@ -24,6 +24,7 @@
         "arrow-parens": "off",
         "dot-notation": "off",
         "new-cap": "off",
+        "consistent-return": "off",
 
         "no-var": ["error"],
         "no-new-object": ["error"],

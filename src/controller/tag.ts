@@ -1,11 +1,14 @@
 import * as Koa from 'koa';
 import { getMongoRepository, MongoRepository, Repository } from 'typeorm';
-import { ObjectID, ObjectId } from 'mongodb';
+import { ObjectId } from 'mongodb';
+import { Validator, validate } from 'class-validator';
 import { resReturn, log } from '../utils/index';
 import tagEntity from '../entity/tag';
 import {
     Controller, Get, Post, Del, Patch
 } from '../decorators/router-decorator';
+
+const validator = new Validator();
 
 @Controller({ prefix: '/tag' })
 export default class Tag {
@@ -16,14 +19,22 @@ export default class Tag {
      */
     @Get('/')
     async getTags(ctx: Koa.Context) {
-        const {
+        let {
             pageSize = -1,
             pageNo = 1
         } = ctx.query;
+
+        if (!validator.isInt(+pageNo) || !validator.min(pageNo, 1)) {
+            pageNo = 1;
+        }
+        if (!validator.isInt(+pageSize) || !validator.min(pageSize, 1)) {
+            pageSize = -1;
+        }
+
         const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
         try {
             const tagsTotal = await tagRepo.count();
-            const tags = pageSize < 0 || pageNo <= 1
+            const tags = pageSize === -1
                 ? await tagRepo.find()
                 : await tagRepo.createEntityCursor()
                     .limit(+pageSize)
@@ -34,8 +45,8 @@ export default class Tag {
                 pagination: {
                     total: tagsTotal,
                     totalPage: pageSize >= 0 ? Math.ceil(tagsTotal / pageSize) : 1,
-                    pageNo: pageNo > 1 ? pageNo : 1,
-                    pageSize: pageSize >= 0 ? pageSize : -1,
+                    pageNo,
+                    pageSize
                 }
             });
         } catch (error) {
@@ -52,13 +63,18 @@ export default class Tag {
     async addTag(ctx: Koa.Context) {
         const { name, descript } = ctx.request.body;
         const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
-        const res = await tagRepo.find({ name });
-        if (res && res.length !== 0) {
-            ctx.body = resReturn(null, 400, '已存在相同标签名');
-            return;
-        }
-        const tag = tagRepo.create({ name, descript });
         try {
+            const res = await tagRepo.find({ name });
+            if (res && res.length !== 0) {
+                ctx.body = resReturn(null, 400, '已存在相同标签名');
+                return;
+            }
+            const tag = tagRepo.create({ name, descript });
+            const ValidateErr = await validate(tag, { skipMissingProperties: true });
+            if (ValidateErr.length) {
+                ctx.body = resReturn(ValidateErr.map(e => e.constraints), 400, '发布标签失败');
+                return;
+            }
             await tagRepo.save(tag);
             ctx.body = resReturn(tag);
         } catch (err) {
@@ -67,7 +83,7 @@ export default class Tag {
     }
 
     /**
-     * 安给定的顺序对标签排序
+     * 按照给定的顺序对标签排序
      * @param ids 排序的ID数组
      */
     @Patch('/rank')
@@ -80,7 +96,10 @@ export default class Tag {
                     { _id: new ObjectId(ids[i]) },
                     { $set: { sort: i + 1 } },
                     { upsert: false }
-                ).catch(err => ctx.throw(500, '服务器内部错误'));
+                ).catch(err => {
+                    log(err, 'error');
+                    ctx.throw(500, '服务器内部错误');
+                });
             }
             ctx.body = resReturn(null);
         } catch (err) {
@@ -96,11 +115,11 @@ export default class Tag {
      * @body descript 标签描述
      */
     @Patch('/:tagId', 'tagId', (tagId, ctx, next) => {
-        if (tagId === 'rank') {
+        if (!validator.isMongoId(tagId)) {
             ctx.status = 404;
             return;
         }
-        next();
+        return next();
     })
     async updateTag(ctx: Koa.Context) {
         const { tagId } = ctx.params;
@@ -112,7 +131,13 @@ export default class Tag {
                 ctx.body = resReturn(null, 400, '标签不存在');
             }
             const newTag = tagRepo.merge(tag, { name, descript });
+            const validateErr = await validate(newTag, { skipMissingProperties: true });
+            if (validateErr.length) {
+                ctx.body = resReturn(validateErr.map(e => e.constraints), 400, '更新标签失败');
+                return;
+            }
             await tagRepo.save(newTag);
+            // 以下更新方法不会触发typeorm 的 updateDate 装饰器
             // const updateTag = await tagRepo.findOneAndUpdate(
             //     { _id: new ObjectID(tagId) },
             //     { $set: { name, descript } },

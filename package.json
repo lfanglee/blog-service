@@ -27,6 +27,7 @@
   "homepage": "https://github.com/kindboy/blog-service#readme",
   "dependencies": {
     "@types/fs-extra": "^5.0.5",
+    "class-validator": "^0.9.1",
     "dotenv": "^7.0.0",
     "fs-extra": "^7.0.1",
     "koa": "^2.7.0",
