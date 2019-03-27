@@ -5,7 +5,7 @@ import { Validator, validate } from 'class-validator';
 import articleEntity from '../entity/article';
 import tagEntity from '../entity/tag';
 import {
-    Controller, Get, Post, Patch
+    Controller, Get, Post, Patch, Del
 } from '../decorators/router-decorator';
 import { resReturn, log } from '../utils/index';
 
@@ -137,6 +137,10 @@ export default class Article {
         }
     }
 
+    /**
+     * 修改文章
+     * @param 参数同上传文章接口，传递需要修改的字段即可
+     */
     @Patch('/:artId')
     async updateArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
@@ -171,6 +175,23 @@ export default class Article {
             ctx.body = resReturn(updateArticle);
         } catch (error) {
             log(error, 'error');
+            ctx.body = resReturn(null, 500, '服务器内部错误');
+        }
+    }
+
+    @Del('/:artId')
+    async delArt(ctx: Koa.Context) {
+        const { artId } = ctx.params;
+        const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
+        try {
+            const res = await articleRepo.findOne(artId);
+            if (!res) {
+                ctx.body = resReturn(null, 400, '文章不存在');
+                return;
+            }
+            await articleRepo.remove(res);
+            ctx.body = resReturn(null);
+        } catch (err) {
             ctx.body = resReturn(null, 500, '服务器内部错误');
         }
     }

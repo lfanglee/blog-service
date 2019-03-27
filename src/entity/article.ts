@@ -48,11 +48,11 @@ export default class Article {
     content: string
 
     @Column({ type: 'integer', default: 1 })
-    @IsEnum(StateEnum, { message: '文章state只不存在' })
+    @IsEnum(StateEnum, { message: '该文章state不存在' })
     state: number // 1 发布  2 草稿
 
     @Column({ type: 'integer', default: 1 })
-    @IsEnum(PublishEnum, { message: '文章发布权限不存在' })
+    @IsEnum(PublishEnum, { message: '该文章发布权限不存在' })
     publish: number // 1 公开 2 私有
 
     @Column()
@@ -60,7 +60,7 @@ export default class Article {
     thumb: string
 
     @Column({ type: 'integer', default: 1 })
-    @IsEnum(TypeEnum, { message: '文章类型不存在' })
+    @IsEnum(TypeEnum, { message: '该文章类型不存在' })
     type: number // 1 code
 
     @Column()

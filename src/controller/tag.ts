@@ -157,10 +157,6 @@ export default class Tag {
     @Del('/:tagId')
     async delTag(ctx: Koa.Context) {
         const { tagId } = ctx.params;
-        if (!tagId) {
-            ctx.body = resReturn(null, 400, '无效参数');
-            return;
-        }
         const resRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
         try {
             const res = await resRepo.findOne(tagId);
