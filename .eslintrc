@@ -37,6 +37,7 @@
         "no-plusplus": "off",
         "no-await-in-loop": "off",
         "no-bitwise": "off",
+        "no-underscore-dangle": "off",
         
         "class-methods-use-this": "off",
         "func-names": "off",

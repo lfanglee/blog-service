@@ -93,7 +93,12 @@ export default class Auth {
                 gravatar
             });
             await authRepo.save(updateUser);
-            ctx.body = resReturn(updateUser);
+            ctx.body = resReturn({
+                username: updateUser.username,
+                name: updateUser.name,
+                gravatar: updateUser.gravatar,
+                slogan: updateUser.slogan
+            });
         } catch (error) {
             log(error, 'error');
             ctx.body = resReturn(null, 500, '服务器内部错误');
@@ -128,7 +133,12 @@ export default class Auth {
                 password: md5Decode(newPass)
             });
             await authRepo.save(updateUser);
-            ctx.body = resReturn(updateUser);
+            ctx.body = resReturn({
+                username: updateUser.username,
+                name: updateUser.name,
+                gravatar: updateUser.gravatar,
+                slogan: updateUser.slogan
+            });
         } catch (error) {
             log(error, 'error');
             ctx.body = resReturn(null, 500, '服务器内部错误');

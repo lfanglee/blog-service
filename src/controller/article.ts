@@ -68,6 +68,65 @@ export default class Article {
     }
 
     /**
+     * 获取文章列表的timeline
+     */
+    @Get('/timeline')
+    async getAllArtsWithTimeline(ctx: Koa.Context) {
+        const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
+
+        try {
+            const articles = await articleRepo.aggregate([
+                { $match: { state: 1, publish: 1 } },
+                {
+                    $project: {
+                        year: { $year: '$create_at' },
+                        month: { $month: '$create_at' },
+                        title: 1,
+                        create_at: 1
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            year: '$year',
+                            month: '$month'
+                        },
+                        article: {
+                            $push: {
+                                title: '$title',
+                                _id: '$_id',
+                                create_at: '$create_at'
+                            }
+                        }
+                    }
+                }
+            ]).toArray();
+            if (articles && articles.length) {
+                const yearList = [...new Set(articles.map(item => item._id.year))]
+                    .sort((a, b) => b - a)
+                    .map(year => {
+                        const monthList: Array<any> = [];
+                        articles.forEach(article => {
+                            if (article._id.year === year) {
+                                monthList.push({
+                                    month: article._id.month,
+                                    articleList: article.article.reverse()
+                                });
+                            }
+                        });
+                        return { year, monthList: monthList.sort((a, b) => b.month - a.month) };
+                    });
+                ctx.body = resReturn(yearList);
+                return;
+            }
+            ctx.body = resReturn([]);
+        } catch (error) {
+            log(error, 'error');
+            ctx.body = resReturn(null, 500, '服务器内部错误');
+        }
+    }
+
+    /**
      * 获取文章详情
      * @param artId 文章ID
      */
@@ -88,6 +147,8 @@ export default class Article {
                 ctx.body = resReturn(null, 400, '文章不存在');
                 return;
             }
+            art.meta.views++;
+            await articleRepo.save(art);
             ctx.body = resReturn({
                 ...art,
                 tags: await tagRepo.findByIds(art.tags.map((i: string) => new ObjectId(i)))
