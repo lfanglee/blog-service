@@ -1,5 +1,6 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 import { config } from '../config';
 
@@ -38,3 +39,8 @@ export const log = (msg: any, type: 'log' | 'warn' | 'error' = 'log') => {
 };
 
 export const time = () => Date.parse(new Date() as any) / 1000;
+
+export const md5Decode = (pwd: string | Buffer | DataView) => crypto
+    .createHash('md5')
+    .update(pwd)
+    .digest('hex');

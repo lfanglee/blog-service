@@ -11,6 +11,9 @@ export interface Config {
     databasePort: number;
     database: string;
     log: string;
+    jwtSecret: string;
+    defaultUsername: string;
+    defaultPassword: string;
 }
 
 const config: Config = {
@@ -20,7 +23,11 @@ const config: Config = {
     serverName: process.env.SERVER_NAME || '127.0.0.1',
     databasePort: +process.env.DATABASE_PORT || 27017,
     database: process.env.DATABASE || 'blog-service',
-    log: path.resolve(__dirname, '../logs')
+    log: path.resolve(__dirname, '../logs'),
+
+    jwtSecret: process.env.JWT_SECRET,
+    defaultUsername: process.env.DEFAULT_ADMIN_USERNAME,
+    defaultPassword: process.env.DEFAULT_ADMIN_PASSWORD
 };
 
 export { config };

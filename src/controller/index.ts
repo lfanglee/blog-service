@@ -1,7 +1,7 @@
 import * as Router from 'koa-router';
 
 import { mapRoute, RouteItem, Routes } from '../decorators/router-decorator';
-import Test from './test';
+import Auth from './auth';
 import Article from './article';
 import Tag from './tag';
 
@@ -12,7 +12,7 @@ const router = new Router({
 class Controller {
     router: Router = router
 
-    routes: Array<any> = [Test, Article, Tag]
+    routes: Array<any> = [Auth, Article, Tag]
 
     constructor() {
         this.init();
