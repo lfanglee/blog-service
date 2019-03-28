@@ -5,7 +5,7 @@ import {
 import {
     IsNotEmpty, IsDate, IsUrl, IsEnum
 } from 'class-validator';
-import Tag from './tag';
+import { IsArrayOfMongoId } from '../decorators/isArrayOfMongoId';
 
 export interface Meta {
     views: number,
@@ -64,7 +64,10 @@ export default class Article {
     type: number // 1 code
 
     @Column()
-    tag: Tag[]
+    @IsArrayOfMongoId({
+        message: '标签ID不合法'
+    })
+    tags: string[]
 
     @CreateDateColumn()
     @IsDate()

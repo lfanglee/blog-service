@@ -37,16 +37,23 @@ export default class Article {
         }
 
         const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
+        const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
         try {
-            const total = await articleRepo.count();
-            const arts = pageSize === -1
+            const total: number = await articleRepo.count();
+            const arts: articleEntity[] = pageSize === -1
                 ? await articleRepo.find()
                 : await articleRepo.createEntityCursor()
                     .skip((pageNo - 1) * pageSize)
                     .limit(pageSize)
                     .toArray();
+
             ctx.body = resReturn({
-                list: arts,
+                list: await Promise.all(arts.map(async (art: any) => {
+                    art.tags = await tagRepo.findByIds(
+                        art.tags.map((i: string) => new ObjectId(i))
+                    );
+                    return art;
+                })),
                 pagination: {
                     total,
                     totalPage: pageSize === -1 ? 1 : Math.ceil(total / pageSize),
@@ -74,12 +81,17 @@ export default class Article {
     async getArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
         const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
+        const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
         try {
             const art = await articleRepo.findOne(artId);
             if (!art) {
                 ctx.body = resReturn(null, 400, '文章不存在');
+                return;
             }
-            ctx.body = resReturn(art);
+            ctx.body = resReturn({
+                ...art,
+                tags: await tagRepo.findByIds(art.tags.map((i: string) => new ObjectId(i)))
+            });
         } catch (error) {
             log(error, 'error');
             ctx.body = resReturn(null, 500, '服务器内部错误');
@@ -105,11 +117,7 @@ export default class Article {
             state = 1, publish = 1, type = 1, tags
         } = ctx.request.body;
         const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
-        const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
         try {
-            const tagsList: tagEntity[] = await tagRepo.findByIds(
-                tags.map((i: string) => new ObjectId(i))
-            );
             const article: articleEntity = articleRepo.create({
                 title,
                 keyword,
@@ -119,7 +127,7 @@ export default class Article {
                 state,
                 publish,
                 type,
-                tag: tagsList,
+                tags,
                 meta: {
                     views: 0, comments: 0, likes: 0
                 }
@@ -152,16 +160,9 @@ export default class Article {
                 return;
             }
             const updateData: ObjectLiteral = {};
-            if (ctx.request.body.tags) {
-                const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
-                const tagsList: tagEntity[] = await tagRepo.findByIds(
-                    ctx.request.body.tags.map((i: string) => new ObjectId(i))
-                );
-                updateData.tag = tagsList;
-            }
             Object.entries(ctx.request.body).forEach(([k, v]) => {
                 if (['title', 'keyword', 'content', 'descript', 'thumb',
-                    'state', 'publish', 'type'].includes(k)) {
+                    'state', 'publish', 'type', 'tags'].includes(k)) {
                     updateData[k] = v;
                 }
             });
