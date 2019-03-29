@@ -5,7 +5,7 @@ import { Validator, validate } from 'class-validator';
 import { resReturn, log } from '../utils/index';
 import tagEntity from '../entity/tag';
 import {
-    Controller, Get, Post, Del, Patch
+    Controller, Get, Post, Del, Patch, Param
 } from '../decorators/router-decorator';
 
 const validator = new Validator();
@@ -114,7 +114,8 @@ export default class Tag {
      * @body name 标签名
      * @body descript 标签描述
      */
-    @Patch('/:tagId', 'tagId', (tagId, ctx, next) => {
+    @Patch('/:tagId')
+    @Param('tagId', (tagId, ctx, next) => {
         if (!validator.isMongoId(tagId)) {
             ctx.status = 404;
             return;

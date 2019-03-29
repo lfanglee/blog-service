@@ -2,6 +2,9 @@ import * as Koa from 'koa';
 import * as dotenv from 'dotenv';
 import * as helmet from 'koa-helmet';
 import * as bodyParser from 'koa-bodyparser';
+import * as serve from 'koa-static';
+import * as mount from 'koa-mount';
+import * as path from 'path';
 import 'reflect-metadata';
 
 import connect from './utils/db';
@@ -22,6 +25,7 @@ app.use(interceptor);
 app.use(Auth.initAdmin);
 
 app.use(helmet());
+app.use(mount('/uploads', serve(path.join(__dirname, '../uploads'))));
 app.use(bodyParser());
 
 // record request
@@ -37,7 +41,7 @@ app.use(async (ctx: Koa.Context, next) => {
         log(error, 'error');
         ctx.body = resReturn(null, 500, '服务器内部错误');
     }
-    if ([400, 404, 405].includes(ctx.status)) {
+    if (/^4\d{2}$/.test(ctx.status.toString())) {
         ctx.body = resReturn(null, ctx.status, '无效的请求');
     }
 });

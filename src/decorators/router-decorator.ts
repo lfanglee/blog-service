@@ -1,4 +1,5 @@
 import * as Router from 'koa-router';
+import * as Koa from 'koa';
 
 export enum RequestMethod {
     GET = 'get',
@@ -16,8 +17,9 @@ type Method = RequestMethod;
 export interface RouteItem {
     route: string,
     method: Method,
+    middlewares: Array<Koa.Middleware>,
     param: string,
-    middleware: Router.IParamMiddleware,
+    paramMiddleware: Router.IParamMiddleware,
     fn: Router.IMiddleware,
     methodName: string
 }
@@ -28,15 +30,21 @@ export interface Routes {
 }
 
 export function Request(
-    {
-        path, method, param, middleware
-    }: { path: string, method: Method, param?: string, middleware?: Router.IParamMiddleware }
+    { path, method, middlewares }: {
+        path: string, method: Method, middlewares?: Array<Koa.Middleware>
+    }
 ): MethodDecorator {
     return (target: any, key: string, descriptor: PropertyDescriptor) => {
         target[key]['$method'] = method;
         target[key]['$path'] = path;
+        target[key]['$middlewares'] = middlewares;
+    };
+}
+
+export function Param(param: string, middleware: Router.IParamMiddleware) {
+    return (target: any, key: string, descriptor: PropertyDescriptor) => {
         target[key]['$param'] = param;
-        target[key]['$middleware'] = middleware;
+        target[key]['$paramMiddleware'] = middleware;
     };
 }
 
@@ -55,13 +63,15 @@ export function mapRoute(target: any): Routes {
             const fn = prototype[methodName];
             const route = fn['$path'];
             const method = fn['$method'];
+            const middlewares = fn['$middlewares'];
             const param = fn['$param'];
-            const middleware = fn['$middleware'];
+            const paramMiddleware = fn['$paramMiddleware'];
             return {
                 route,
                 method,
+                middlewares,
                 param,
-                middleware,
+                paramMiddleware,
                 fn,
                 methodName
             };
@@ -73,49 +83,33 @@ export function mapRoute(target: any): Routes {
 }
 
 export const Get = (
-    path: string, param?: string, middleware?: Router.IParamMiddleware
-) => Request({
-    path, method: RequestMethod.GET, param, middleware
-});
+    path: string, ...middlewares: Array<Koa.Middleware>
+) => Request({ path, method: RequestMethod.GET, middlewares });
 
 export const Post = (
-    path: string, param?: string, middleware?: Router.IParamMiddleware
-) => Request({
-    path, method: RequestMethod.POST, param, middleware
-});
+    path: string, ...middlewares: Array<Koa.Middleware>
+) => Request({ path, method: RequestMethod.POST, middlewares });
 
 export const Put = (
-    path: string, param?: string, middleware?: Router.IParamMiddleware
-) => Request({
-    path, method: RequestMethod.PUT, param, middleware
-});
+    path: string, ...middlewares: Array<Koa.Middleware>
+) => Request({ path, method: RequestMethod.PUT, middlewares });
 
 export const Del = (
-    path: string, param?: string, middleware?: Router.IParamMiddleware
-) => Request({
-    path, method: RequestMethod.DEL, param, middleware
-});
+    path: string, ...middlewares: Array<Koa.Middleware>
+) => Request({ path, method: RequestMethod.DEL, middlewares });
 
 export const Patch = (
-    path: string, param?: string, middleware?: Router.IParamMiddleware
-) => Request({
-    path, method: RequestMethod.PATCH, param, middleware
-});
+    path: string, ...middlewares: Array<Koa.Middleware>
+) => Request({ path, method: RequestMethod.PATCH, middlewares });
 
 export const Head = (
-    path: string, param?: string, middleware?: Router.IParamMiddleware
-) => Request({
-    path, method: RequestMethod.HEAD, param, middleware
-});
+    path: string, ...middlewares: Array<Koa.Middleware>
+) => Request({ path, method: RequestMethod.HEAD, middlewares });
 
 export const Options = (
-    path: string, param?: string, middleware?: Router.IParamMiddleware
-) => Request({
-    path, method: RequestMethod.OPTIONS, param, middleware
-});
+    path: string, ...middlewares: Array<Koa.Middleware>
+) => Request({ path, method: RequestMethod.OPTIONS, middlewares });
 
 export const All = (
-    path: string, param?: string, middleware?: Router.IParamMiddleware
-) => Request({
-    path, method: RequestMethod.ALL, param, middleware
-});
+    path: string, ...middlewares: Array<Koa.Middleware>
+) => Request({ path, method: RequestMethod.ALL, middlewares });

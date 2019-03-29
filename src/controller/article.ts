@@ -5,7 +5,7 @@ import { Validator, validate } from 'class-validator';
 import articleEntity from '../entity/article';
 import tagEntity from '../entity/tag';
 import {
-    Controller, Get, Post, Patch, Del
+    Controller, Get, Post, Patch, Del, Param
 } from '../decorators/router-decorator';
 import { resReturn, log } from '../utils/index';
 
@@ -130,7 +130,8 @@ export default class Article {
      * 获取文章详情
      * @param artId 文章ID
      */
-    @Get('/:artId', 'artId', (artId, ctx, next) => {
+    @Get('/:artId')
+    @Param('artId', (artId, ctx, next) => {
         if (!validator.isMongoId(artId)) {
             ctx.status = 404;
             return;
