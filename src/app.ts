@@ -31,6 +31,9 @@ app.use(bodyParser());
 // record request
 app.use(async (ctx: Koa.Context, next) => {
     await next();
+    if (!ctx.url.startsWith('/api')) {
+        return;
+    }
     log(`${ctx.method} ${ctx.url}`);
 });
 
