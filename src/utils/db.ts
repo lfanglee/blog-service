@@ -15,6 +15,7 @@ const connectionOpts: ConnectionOptions = {
     useNewUrlParser: true,
     entities: [
         `${parentDir}/entity/*.ts`,
+        `${parentDir}/entity/*.js`
     ],
     synchronize: true,
 };
