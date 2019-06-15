@@ -62,7 +62,7 @@ export default class Article {
 
     @Column({ type: 'integer', default: 1 })
     @IsEnum(TypeEnum, { message: '该文章类型不存在' })
-    type: number // 1 code
+    type: number // 1 code 2 杂谈
 
     @Column()
     @IsArrayOfMongoId({

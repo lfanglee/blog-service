@@ -61,7 +61,11 @@ export default class Tag {
      */
     @Post('/')
     async addTag(ctx: Koa.Context) {
-        const { name, descript } = ctx.request.body;
+        const { name, descript = '' } = ctx.request.body;
+        if (!name) {
+            ctx.body = resReturn(null, 400, '缺少标签名');
+            return;
+        }
         const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
         try {
             const res = await tagRepo.find({ name });
