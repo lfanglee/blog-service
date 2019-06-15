@@ -3,14 +3,14 @@ import {
     Entity, ObjectID, ObjectIdColumn, Column, CreateDateColumn, UpdateDateColumn
 } from 'typeorm';
 import {
-    IsNotEmpty, IsDate, IsUrl, IsEnum
+    IsNotEmpty, IsDate, IsUrl, IsEnum, IsArray
 } from 'class-validator';
 import { IsArrayOfMongoId } from '../decorators/isArrayOfMongoId';
 
 export interface Meta {
-    views: number,
-    likes: number,
-    comments: number
+    views: number;
+    likes: number;
+    comments: number;
 }
 
 enum StateEnum {
@@ -24,7 +24,8 @@ enum PublishEnum {
 }
 
 enum TypeEnum {
-    normal = 1
+    normal = 1,
+    others = 2
 }
 
 @Entity()
@@ -67,6 +68,7 @@ export default class Article {
     @IsArrayOfMongoId({
         message: '标签ID不合法'
     })
+    @IsArray()
     tags: string[]
 
     @CreateDateColumn()

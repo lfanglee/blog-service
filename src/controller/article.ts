@@ -2,8 +2,8 @@ import * as Koa from 'koa';
 import { MongoRepository, getMongoRepository, ObjectLiteral } from 'typeorm';
 import { ObjectId } from 'mongodb';
 import { Validator, validate } from 'class-validator';
-import articleEntity from '../entity/article';
-import tagEntity from '../entity/tag';
+import ArticleEntity from '../entity/article';
+import TagEntity from '../entity/tag';
 import {
     Controller, Get, Post, Patch, Del, Param
 } from '../decorators/router-decorator';
@@ -36,11 +36,11 @@ export default class Article {
             pageSize = -1;
         }
 
-        const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
-        const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
+        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
+        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
         try {
             const total: number = await articleRepo.count();
-            const arts: articleEntity[] = pageSize === -1
+            const arts: ArticleEntity[] = pageSize === -1
                 ? await articleRepo.find()
                 : await articleRepo.createEntityCursor()
                     .skip((pageNo - 1) * pageSize)
@@ -72,7 +72,7 @@ export default class Article {
      */
     @Get('/timeline')
     async getAllArtsWithTimeline(ctx: Koa.Context) {
-        const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
+        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
 
         try {
             const articles = await articleRepo.aggregate([
@@ -140,8 +140,8 @@ export default class Article {
     })
     async getArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
-        const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
-        const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
+        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
+        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
         try {
             const art = await articleRepo.findOne(artId);
             if (!art) {
@@ -178,18 +178,20 @@ export default class Article {
             title, keyword, content, descript, thumb,
             state = 1, publish = 1, type = 1, tags
         } = ctx.request.body;
-        const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
+        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
+        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
         try {
-            const article: articleEntity = articleRepo.create({
+            console.log(tags);
+            const article: ArticleEntity = articleRepo.create({
                 title,
                 keyword,
                 descript,
                 content,
                 thumb,
-                state,
-                publish,
-                type,
-                tags,
+                state: +state,
+                publish: +publish,
+                type: +type,
+                tags: tags.split(','),
                 meta: {
                     views: 0, comments: 0, likes: 0
                 }
@@ -200,7 +202,12 @@ export default class Article {
                 return;
             }
             await articleRepo.save(article);
-            ctx.body = resReturn(article);
+            ctx.body = resReturn({
+                ...article,
+                tags: await tagRepo.findByIds(
+                    article.tags.map((i: string) => new ObjectId(i))
+                )
+            });
         } catch (error) {
             log(error, 'error');
             ctx.body = resReturn(null, 500, '服务器内部错误');
@@ -214,9 +221,10 @@ export default class Article {
     @Patch('/:artId')
     async updateArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
-        const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
+        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
+        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
         try {
-            const article: articleEntity = await articleRepo.findOne(artId);
+            const article: ArticleEntity = await articleRepo.findOne(artId);
             if (!article) {
                 ctx.body = resReturn(null, 400, '文章不存在');
                 return;
@@ -228,14 +236,25 @@ export default class Article {
                     updateData[k] = v;
                 }
             });
-            const updateArticle: articleEntity = articleRepo.merge(article, updateData);
+            const updateArticle: ArticleEntity = articleRepo.merge(article, {
+                ...updateData,
+                state: +updateData.state,
+                publish: +updateData.publish,
+                type: +updateData.type,
+                tags: updateData.tags.split(',')
+            });
             const validateErr = await validate(updateArticle, { skipMissingProperties: true });
             if (validateErr.length) {
                 ctx.body = resReturn(validateErr.map(e => e.constraints), 400, '文章更新失败');
                 return;
             }
             await articleRepo.save(updateArticle);
-            ctx.body = resReturn(updateArticle);
+            ctx.body = resReturn({
+                ...updateArticle,
+                tags: await tagRepo.findByIds(
+                    article.tags.map((i: string) => new ObjectId(i))
+                )
+            });
         } catch (error) {
             log(error, 'error');
             ctx.body = resReturn(null, 500, '服务器内部错误');
@@ -245,7 +264,7 @@ export default class Article {
     @Del('/:artId')
     async delArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
-        const articleRepo: MongoRepository<articleEntity> = getMongoRepository(articleEntity);
+        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
         try {
             const res = await articleRepo.findOne(artId);
             if (!res) {

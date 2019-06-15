@@ -3,7 +3,7 @@ import { getMongoRepository, MongoRepository, Repository } from 'typeorm';
 import { ObjectId } from 'mongodb';
 import { Validator, validate } from 'class-validator';
 import { resReturn, log } from '../utils/index';
-import tagEntity from '../entity/tag';
+import TagEntity from '../entity/tag';
 import {
     Controller, Get, Post, Del, Patch, Param
 } from '../decorators/router-decorator';
@@ -31,7 +31,7 @@ export default class Tag {
             pageSize = -1;
         }
 
-        const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
+        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
         try {
             const tagsTotal = await tagRepo.count();
             const tags = pageSize === -1
@@ -62,7 +62,7 @@ export default class Tag {
     @Post('/')
     async addTag(ctx: Koa.Context) {
         const { name, descript } = ctx.request.body;
-        const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
+        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
         try {
             const res = await tagRepo.find({ name });
             if (res && res.length !== 0) {
@@ -89,7 +89,7 @@ export default class Tag {
     @Patch('/rank')
     async rankTag(ctx: Koa.Context) {
         const { ids } = ctx.request.body;
-        const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
+        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
         try {
             for (let i = 0, len = ids.length; i < len; i++) {
                 await tagRepo.findOneAndUpdate(
@@ -125,7 +125,7 @@ export default class Tag {
     async updateTag(ctx: Koa.Context) {
         const { tagId } = ctx.params;
         const { name, descript } = ctx.request.body;
-        const tagRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
+        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
         try {
             const tag = await tagRepo.findOne(tagId);
             if (!tag) {
@@ -158,7 +158,7 @@ export default class Tag {
     @Del('/:tagId')
     async delTag(ctx: Koa.Context) {
         const { tagId } = ctx.params;
-        const resRepo: MongoRepository<tagEntity> = getMongoRepository(tagEntity);
+        const resRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
         try {
             const res = await resRepo.findOne(tagId);
             if (!res) {

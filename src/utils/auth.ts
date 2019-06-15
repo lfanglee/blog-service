@@ -7,7 +7,7 @@ export default class Auth {
     static authToken(ctx: Koa.Request) {
         if (ctx.headers && ctx.headers.authorization) {
             const authInfo = ctx.headers.authorization.split(' ');
-            if (authInfo.length === 2 && authInfo[0] === 'Token') {
+            if (authInfo.length === 2 && authInfo[0] === 'TOKEN') {
                 return authInfo[1];
             }
         }

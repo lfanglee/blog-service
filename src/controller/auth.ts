@@ -2,7 +2,7 @@ import * as Koa from 'koa';
 import { getMongoRepository, MongoRepository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import { resReturn, log, md5Decode } from '../utils/index';
-import authEntity from '../entity/auth';
+import AuthEntity from '../entity/auth';
 import {
     Controller, Get, Post, Put, Patch
 } from '../decorators/router-decorator';
@@ -14,7 +14,7 @@ export default class Auth {
     static async initAdmin(ctx: Koa.Context, next: () => Promise<any>) {
         const username = config.defaultUsername;
         const password = md5Decode(config.defaultPassword);
-        const authRepo: MongoRepository<authEntity> = getMongoRepository(authEntity);
+        const authRepo: MongoRepository<AuthEntity> = getMongoRepository(AuthEntity);
         try {
             const res = await authRepo.count();
             if (!res) {
@@ -39,10 +39,10 @@ export default class Auth {
     @Post('/login')
     async login(ctx: Koa.Context) {
         const { username, password } = ctx.request.body;
-        const authRepo: MongoRepository<authEntity> = getMongoRepository(authEntity);
+        const authRepo: MongoRepository<AuthEntity> = getMongoRepository(AuthEntity);
 
         try {
-            const auth: authEntity = await authRepo.findOne({ username });
+            const auth: AuthEntity = await authRepo.findOne({ username });
             if (!auth) {
                 ctx.body = resReturn(null, 400, '用户名不存在');
                 return;
@@ -78,7 +78,7 @@ export default class Auth {
         const {
             username, name, slogan, gravatar
         } = ctx.request.body;
-        const authRepo: MongoRepository<authEntity> = getMongoRepository(authEntity);
+        const authRepo: MongoRepository<AuthEntity> = getMongoRepository(AuthEntity);
 
         try {
             const user = await authRepo.findOne({ username });
@@ -114,7 +114,7 @@ export default class Auth {
     @Patch('/auth')
     async updatePassword(ctx: Koa.Context) {
         const { username, oldPass, newPass } = ctx.request.body;
-        const authRepo: MongoRepository<authEntity> = getMongoRepository(authEntity);
+        const authRepo: MongoRepository<AuthEntity> = getMongoRepository(AuthEntity);
         try {
             const user = await authRepo.findOne({ username });
             if (!user) {
