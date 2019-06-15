@@ -49,9 +49,9 @@ export default class Article {
 
             ctx.body = resReturn({
                 list: await Promise.all(arts.map(async (art: any) => {
-                    art.tags = await tagRepo.findByIds(
+                    art.tags && art.tags.length && (art.tags = await tagRepo.findByIds(
                         art.tags.map((i: string) => new ObjectId(i))
-                    );
+                    ));
                     return art;
                 })),
                 pagination: {
