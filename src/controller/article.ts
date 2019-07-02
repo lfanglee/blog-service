@@ -152,7 +152,9 @@ export default class Article {
             await articleRepo.save(art);
             ctx.body = resReturn({
                 ...art,
-                tags: await tagRepo.findByIds(art.tags.map((i: string) => new ObjectId(i)))
+                tags: (art.tags && art.tags.length)
+                    ? await tagRepo.findByIds(art.tags.map((i: string) => new ObjectId(i)))
+                    : []
             });
         } catch (error) {
             log(error, 'error');
