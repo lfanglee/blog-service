@@ -28,11 +28,13 @@ export default class Article {
             pageNo = 1,
             pageSize = 10
         } = ctx.query;
+        pageNo = +pageNo;
+        pageSize = +pageSize;
 
-        if (!validator.isInt(+pageNo) || !validator.min(pageNo, 1)) {
+        if (!validator.isInt(pageNo) || !validator.min(pageNo, 1)) {
             pageNo = 1;
         }
-        if (!validator.isInt(+pageSize) || !validator.min(pageSize, 1)) {
+        if (!validator.isInt(pageSize) || !validator.min(pageSize, 1)) {
             pageSize = -1;
         }
 
