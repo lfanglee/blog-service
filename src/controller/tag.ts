@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb';
 import { Validator, validate } from 'class-validator';
 import { resReturn, log } from '../utils/index';
 import TagEntity from '../entity/tag';
+import ArticleEntity from '../entity/article';
 import {
     Controller, Get, Post, Del, Patch, Param
 } from '../decorators/router-decorator';
@@ -34,6 +35,7 @@ export default class Tag {
         }
 
         const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
+        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
         try {
             const tagsTotal = await tagRepo.count();
             const tags = pageSize === -1
@@ -43,7 +45,10 @@ export default class Tag {
                     .skip(+pageSize * (+pageNo - 1))
                     .toArray();
             ctx.body = resReturn({
-                tags,
+                tags: await Promise.all(tags.map(async (tag:TagEntity) => ({
+                    ...tag,
+                    count: await articleRepo.count({ tags: tag.id })
+                }))),
                 pagination: {
                     total: tagsTotal,
                     totalPage: pageSize >= 0 ? Math.ceil(tagsTotal / pageSize) : 1,
