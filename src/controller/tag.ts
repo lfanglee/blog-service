@@ -45,16 +45,14 @@ export default class Tag {
                     .skip(+pageSize * (+pageNo - 1))
                     .toArray();
             ctx.body = resReturn({
-                tags: await Promise.all(tags.map(async (tag:TagEntity) => {
-                    return {
-                        ...tag,
-                        count: (await articleRepo.findAndCount({
-                            where: {
-                                tags: { $all: [tag.id.toString()] }
-                            }
-                        }))[1]
-                    };
-                })),
+                tags: await Promise.all(tags.map(async (tag:TagEntity) => ({
+                    ...tag,
+                    count: (await articleRepo.findAndCount({
+                        where: {
+                            tags: { $all: [tag.id.toString()] }
+                        }
+                    }))[1]
+                }))),
                 pagination: {
                     total: tagsTotal,
                     totalPage: pageSize >= 0 ? Math.ceil(tagsTotal / pageSize) : 1,
