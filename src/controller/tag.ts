@@ -4,7 +4,9 @@ import { ObjectId } from 'mongodb';
 import { Validator, validate } from 'class-validator';
 import { resReturn, log } from '../utils/index';
 import TagEntity from '../entity/tag';
-import ArticleEntity from '../entity/article';
+import models from '../models';
+import TagModel from '../models/tag';
+import ArticleModel from '../models/article';
 import {
     Controller, Get, Post, Del, Patch, Param
 } from '../decorators/router-decorator';
@@ -34,24 +36,17 @@ export default class Tag {
             pageSize = -1;
         }
 
-        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
-        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
+        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
+        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
         try {
-            const tagsTotal = await tagRepo.count();
+            const tagsTotal = await tagInst.count();
             const tags = pageSize === -1
-                ? await tagRepo.find()
-                : await tagRepo.createEntityCursor()
-                    .limit(+pageSize)
-                    .skip(+pageSize * (+pageNo - 1))
-                    .toArray();
+                ? await tagInst.findAll()
+                : await tagInst.findAllWithPaging(pageNo - 1, pageSize);
             ctx.body = resReturn({
-                tags: await Promise.all(tags.map(async (tag:TagEntity) => ({
+                tags: await Promise.all(tags.map(async (tag: TagEntity) => ({
                     ...tag,
-                    count: (await articleRepo.findAndCount({
-                        where: {
-                            tags: { $all: [tag.id.toString()] }
-                        }
-                    }))[1]
+                    count: (await articleInst.findByTagAndCount(tag))[1]
                 }))),
                 pagination: {
                     total: tagsTotal,
