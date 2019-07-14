@@ -1,6 +1,5 @@
 import * as Koa from 'koa';
 import { getMongoRepository, MongoRepository, Repository } from 'typeorm';
-import { ObjectId } from 'mongodb';
 import { Validator, validate } from 'class-validator';
 import { resReturn, log } from '../utils/index';
 import TagEntity from '../entity/tag';
@@ -73,8 +72,9 @@ export default class Tag {
             return;
         }
         const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
+        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const res = await tagRepo.find({ name });
+            const res = await tagInst.findByName(name);
             if (res && res.length !== 0) {
                 ctx.body = resReturn(null, 400, '已存在相同标签名');
                 return;
@@ -85,7 +85,7 @@ export default class Tag {
                 ctx.body = resReturn(ValidateErr.map(e => e.constraints), 400, '发布标签失败');
                 return;
             }
-            await tagRepo.save(tag);
+            await tagInst.save(tag);
             ctx.body = resReturn(tag);
         } catch (err) {
             ctx.body = resReturn(null, 500, '发布标签失败');
@@ -99,14 +99,12 @@ export default class Tag {
     @Patch('/rank')
     async rankTag(ctx: Koa.Context) {
         const { ids } = ctx.request.body;
-        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
+        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
             for (let i = 0, len = ids.length; i < len; i++) {
-                await tagRepo.findOneAndUpdate(
-                    { _id: new ObjectId(ids[i]) },
-                    { $set: { sort: i + 1 } },
-                    { upsert: false }
-                ).catch(err => {
+                await tagInst.findByIdAndUpdate(ids[i], {
+                    sort: i + 1
+                }).catch(err => {
                     log(err, 'error');
                     ctx.throw(500, '服务器内部错误');
                 });
@@ -136,8 +134,9 @@ export default class Tag {
         const { tagId } = ctx.params;
         const { name, descript } = ctx.request.body;
         const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
+        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const tag = await tagRepo.findOne(tagId);
+            const tag = await tagInst.findById(tagId);
             if (!tag) {
                 ctx.body = resReturn(null, 400, '标签不存在');
             }
@@ -147,13 +146,7 @@ export default class Tag {
                 ctx.body = resReturn(validateErr.map(e => e.constraints), 400, '更新标签失败');
                 return;
             }
-            await tagRepo.save(newTag);
-            // 以下更新方法不会触发typeorm 的 updateDate 装饰器
-            // const updateTag = await tagRepo.findOneAndUpdate(
-            //     { _id: new ObjectID(tagId) },
-            //     { $set: { name, descript } },
-            //     { upsert: false, returnOriginal: false }
-            // );
+            await tagInst.save(newTag);
             ctx.body = resReturn(newTag);
         } catch (error) {
             log(error, 'error');
@@ -168,14 +161,14 @@ export default class Tag {
     @Del('/:tagId')
     async delTag(ctx: Koa.Context) {
         const { tagId } = ctx.params;
-        const resRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
+        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const res = await resRepo.findOne(tagId);
+            const res = await tagInst.findById(tagId);
             if (!res) {
                 ctx.body = resReturn(null, 400, '标签不存在');
                 return;
             }
-            await resRepo.remove(res);
+            await tagInst.delete(tagId);
             ctx.body = resReturn(null);
         } catch (err) {
             ctx.body = resReturn(null, 500, '服务器内部错误');

@@ -1,4 +1,5 @@
-import { getMongoRepository } from 'typeorm';
+import { getMongoRepository, getMongoManager } from 'typeorm';
+import { ObjectID } from 'mongodb';
 import Tag from '../entity/tag';
 
 export default class TagModel {
@@ -32,8 +33,37 @@ export default class TagModel {
         return tag;
     }
 
+    public async findByIds(idArr: string[]) {
+        const tagRepo = getMongoRepository<Tag>(Tag);
+        const tags = await tagRepo.findByIds(idArr.map(id => new ObjectID(id)));
+        return tags;
+    }
+
+    public async findByName(tagName: string) {
+        const tagRepo = getMongoRepository<Tag>(Tag);
+        const tag = await tagRepo.find({ name: tagName });
+        return tag;
+    }
+
     public async save(tag: Tag) {
         const tagRepo = getMongoRepository<Tag>(Tag);
-        tagRepo.save(tag);
+        const res = await tagRepo.save(tag);
+        return res;
+    }
+
+    public async findByIdAndUpdate(id: string, data: Partial<Tag>) {
+        const tagRepo = getMongoRepository<Tag>(Tag);
+        const tag = await tagRepo.findOneAndUpdate({
+            _id: new ObjectID(id)
+        }, {
+            $set: data
+        }, { upsert: false });
+        return tag;
+    }
+
+    public async delete(id: string) {
+        const tagRepo = getMongoRepository<Tag>(Tag);
+        const res = await tagRepo.delete(id);
+        return res;
     }
 }

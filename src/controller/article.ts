@@ -1,9 +1,10 @@
 import * as Koa from 'koa';
 import { MongoRepository, getMongoRepository, ObjectLiteral } from 'typeorm';
-import { ObjectId } from 'mongodb';
 import { Validator, validate } from 'class-validator';
+import models from '../models';
+import ArticleModel from '../models/article';
+import TagModel from '../models/tag';
 import ArticleEntity from '../entity/article';
-import TagEntity from '../entity/tag';
 import {
     Controller, Get, Post, Patch, Del, Param
 } from '../decorators/router-decorator';
@@ -38,22 +39,17 @@ export default class Article {
             pageSize = -1;
         }
 
-        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
-        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
+        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
+        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const total: number = await articleRepo.count();
+            const total: number = await articleInst.count();
             const arts: ArticleEntity[] = pageSize === -1
-                ? await articleRepo.find()
-                : await articleRepo.createEntityCursor()
-                    .skip((pageNo - 1) * pageSize)
-                    .limit(pageSize)
-                    .toArray();
+                ? await articleInst.findAll()
+                : await articleInst.findAllWithPaging(pageNo - 1, pageSize);
 
             ctx.body = resReturn({
                 list: await Promise.all(arts.map(async (art: any) => {
-                    art.tags && art.tags.length && (art.tags = await tagRepo.findByIds(
-                        art.tags.map((i: string) => new ObjectId(i))
-                    ));
+                    art.tags && art.tags.length && (art.tags = await tagInst.findByIds(art.tags));
                     return art;
                 })),
                 pagination: {
@@ -74,35 +70,10 @@ export default class Article {
      */
     @Get('/timeline')
     async getAllArtsWithTimeline(ctx: Koa.Context) {
-        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
+        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
 
         try {
-            const articles = await articleRepo.aggregate([
-                { $match: { state: 1, publish: 1 } },
-                {
-                    $project: {
-                        year: { $year: '$create_at' },
-                        month: { $month: '$create_at' },
-                        title: 1,
-                        create_at: 1
-                    }
-                },
-                {
-                    $group: {
-                        _id: {
-                            year: '$year',
-                            month: '$month'
-                        },
-                        article: {
-                            $push: {
-                                title: '$title',
-                                _id: '$_id',
-                                create_at: '$create_at'
-                            }
-                        }
-                    }
-                }
-            ]).toArray();
+            const articles = await articleInst.timeline();
             if (articles && articles.length) {
                 const yearList = [...new Set(articles.map(item => item._id.year))]
                     .sort((a, b) => b - a)
@@ -142,20 +113,20 @@ export default class Article {
     })
     async getArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
-        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
-        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
+        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
+        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const art = await articleRepo.findOne(artId);
+            const art = await articleInst.findById(artId);
             if (!art) {
                 ctx.body = resReturn(null, 400, '文章不存在');
                 return;
             }
             art.meta.views++;
-            await articleRepo.save(art);
+            await articleInst.save(art);
             ctx.body = resReturn({
                 ...art,
                 tags: (art.tags && art.tags.length)
-                    ? await tagRepo.findByIds(art.tags.map((i: string) => new ObjectId(i)))
+                    ? await tagInst.findByIds(art.tags)
                     : []
             });
         } catch (error) {
@@ -183,9 +154,9 @@ export default class Article {
             state = 1, publish = 1, type = 1, tags
         } = ctx.request.body;
         const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
-        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
+        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
+        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            console.log(tags);
             const article: ArticleEntity = articleRepo.create({
                 title,
                 keyword,
@@ -195,7 +166,7 @@ export default class Article {
                 state: +state,
                 publish: +publish,
                 type: +type,
-                tags: tags.split(','),
+                tags: tags ? tags.split(',') : [],
                 meta: {
                     views: 0, comments: 0, likes: 0
                 }
@@ -205,12 +176,10 @@ export default class Article {
                 ctx.body = resReturn(validateErr.map(e => e.constraints), 400, '文章发布失败');
                 return;
             }
-            await articleRepo.save(article);
+            await articleInst.save(article);
             ctx.body = resReturn({
                 ...article,
-                tags: await tagRepo.findByIds(
-                    article.tags.map((i: string) => new ObjectId(i))
-                )
+                tags: await tagInst.findByIds(article.tags)
             });
         } catch (error) {
             log(error, 'error');
@@ -226,9 +195,10 @@ export default class Article {
     async updateArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
         const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
-        const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
+        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
+        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const article: ArticleEntity = await articleRepo.findOne(artId);
+            const article: ArticleEntity = await articleInst.findById(artId);
             if (!article) {
                 ctx.body = resReturn(null, 400, '文章不存在');
                 return;
@@ -242,22 +212,20 @@ export default class Article {
             });
             const updateArticle: ArticleEntity = articleRepo.merge(article, {
                 ...updateData,
-                state: +updateData.state,
-                publish: +updateData.publish,
-                type: +updateData.type,
-                tags: updateData.tags.split(',')
+                state: +updateData.state || article.state || 1,
+                publish: +updateData.publish || article.publish || 1,
+                type: +updateData.type || article.type || 1,
+                tags: updateData.tags ? updateData.tags.split(',') : []
             });
             const validateErr = await validate(updateArticle, { skipMissingProperties: true });
             if (validateErr.length) {
                 ctx.body = resReturn(validateErr.map(e => e.constraints), 400, '文章更新失败');
                 return;
             }
-            await articleRepo.save(updateArticle);
+            await articleInst.save(updateArticle);
             ctx.body = resReturn({
                 ...updateArticle,
-                tags: await tagRepo.findByIds(
-                    article.tags.map((i: string) => new ObjectId(i))
-                )
+                tags: await tagInst.findByIds(article.tags)
             });
         } catch (error) {
             log(error, 'error');
@@ -268,14 +236,14 @@ export default class Article {
     @Del('/:artId')
     async delArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
-        const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
+        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
         try {
-            const res = await articleRepo.findOne(artId);
+            const res = await articleInst.findById(artId);
             if (!res) {
                 ctx.body = resReturn(null, 400, '文章不存在');
                 return;
             }
-            await articleRepo.remove(res);
+            await articleInst.delete(artId);
             ctx.body = resReturn(null);
         } catch (err) {
             ctx.body = resReturn(null, 500, '服务器内部错误');

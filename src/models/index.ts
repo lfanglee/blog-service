@@ -1,9 +1,10 @@
 import TagModel from './tag';
-import FileModel from './file';
+import FileModel from './files';
+import ArticleModel from './article';
 
 const instances = new Map();
 
-type ModelInst = TagModel | FileModel;
+type ModelInst = TagModel | FileModel | ArticleModel;
 
 interface Model {
     new (...args: any[]): ModelInst

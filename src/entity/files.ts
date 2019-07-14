@@ -1,13 +1,13 @@
 /* eslint-disable camelcase */
 import {
-    Entity, ObjectID, ObjectIdColumn, Column, CreateDateColumn, UpdateDateColumn
+    Entity, ObjectID, ObjectIdColumn, Column, CreateDateColumn
 } from 'typeorm';
 import {
     IsDate, IsNotEmpty
 } from 'class-validator';
 
 @Entity()
-export default class Tag {
+export default class File {
     @ObjectIdColumn()
     id: ObjectID;
 
