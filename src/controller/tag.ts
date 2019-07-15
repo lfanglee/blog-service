@@ -14,6 +14,8 @@ const validator = new Validator();
 
 @Controller({ prefix: '/tag' })
 export default class Tag {
+    model: TagModel = models.getInstance<TagModel>(TagModel);
+
     /**
      * 获取tags GET
      * @query pageSize 分页大小，默认取全部
@@ -35,13 +37,12 @@ export default class Tag {
             pageSize = -1;
         }
 
-        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
         try {
-            const tagsTotal = await tagInst.count();
+            const tagsTotal = await this.model.count();
             const tags = pageSize === -1
-                ? await tagInst.findAll()
-                : await tagInst.findAllWithPaging(pageNo - 1, pageSize);
+                ? await this.model.findAll()
+                : await this.model.findAllWithPaging(pageNo - 1, pageSize);
             ctx.body = resReturn({
                 tags: await Promise.all(tags.map(async (tag: TagEntity) => ({
                     ...tag,
@@ -72,9 +73,8 @@ export default class Tag {
             return;
         }
         const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
-        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const res = await tagInst.findByName(name);
+            const res = await this.model.findByName(name);
             if (res && res.length !== 0) {
                 ctx.body = resReturn(null, 400, '已存在相同标签名');
                 return;
@@ -85,7 +85,7 @@ export default class Tag {
                 ctx.body = resReturn(ValidateErr.map(e => e.constraints), 400, '发布标签失败');
                 return;
             }
-            await tagInst.save(tag);
+            await this.model.save(tag);
             ctx.body = resReturn(tag);
         } catch (err) {
             ctx.body = resReturn(null, 500, '发布标签失败');
@@ -99,10 +99,9 @@ export default class Tag {
     @Patch('/rank')
     async rankTag(ctx: Koa.Context) {
         const { ids } = ctx.request.body;
-        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
             for (let i = 0, len = ids.length; i < len; i++) {
-                await tagInst.findByIdAndUpdate(ids[i], {
+                await this.model.findByIdAndUpdate(ids[i], {
                     sort: i + 1
                 }).catch(err => {
                     log(err, 'error');
@@ -134,9 +133,8 @@ export default class Tag {
         const { tagId } = ctx.params;
         const { name, descript } = ctx.request.body;
         const tagRepo: MongoRepository<TagEntity> = getMongoRepository(TagEntity);
-        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const tag = await tagInst.findById(tagId);
+            const tag = await this.model.findById(tagId);
             if (!tag) {
                 ctx.body = resReturn(null, 400, '标签不存在');
             }
@@ -146,7 +144,7 @@ export default class Tag {
                 ctx.body = resReturn(validateErr.map(e => e.constraints), 400, '更新标签失败');
                 return;
             }
-            await tagInst.save(newTag);
+            await this.model.save(newTag);
             ctx.body = resReturn(newTag);
         } catch (error) {
             log(error, 'error');
@@ -161,14 +159,13 @@ export default class Tag {
     @Del('/:tagId')
     async delTag(ctx: Koa.Context) {
         const { tagId } = ctx.params;
-        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const res = await tagInst.findById(tagId);
+            const res = await this.model.findById(tagId);
             if (!res) {
                 ctx.body = resReturn(null, 400, '标签不存在');
                 return;
             }
-            await tagInst.delete(tagId);
+            await this.model.delete(tagId);
             ctx.body = resReturn(null);
         } catch (err) {
             ctx.body = resReturn(null, 500, '服务器内部错误');

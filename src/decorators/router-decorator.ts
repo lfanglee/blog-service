@@ -56,7 +56,8 @@ export function Controller(options: Router.IRouterOptions = {}): ClassDecorator 
 
 export function mapRoute(target: any): Routes {
     const options = target['$routerOpts'];
-    const prototype = Object.getPrototypeOf(new target());
+    const instance = new target();
+    const prototype = Object.getPrototypeOf(instance);
     const RoutesList = Object.getOwnPropertyNames(prototype)
         .filter(item => item !== 'constructor' && prototype[item] instanceof Function)
         .map(methodName => {
@@ -72,7 +73,7 @@ export function mapRoute(target: any): Routes {
                 middlewares,
                 param,
                 paramMiddleware,
-                fn,
+                fn: prototype[methodName].bind(instance),
                 methodName
             };
         });

@@ -6,6 +6,10 @@ import Article from './article';
 import Tag from './tag';
 import File from './file';
 
+interface Controllers {
+    new (...args: any): Auth | Article | Tag | File;
+}
+
 const router = new Router({
     prefix: '/api'
 });
@@ -13,14 +17,14 @@ const router = new Router({
 class Controller {
     router: Router = router
 
-    routes: Array<any> = [Auth, Article, Tag, File]
+    routes: Array<Controllers> = [Auth, Article, Tag, File]
 
     constructor() {
         this.init();
     }
 
     init() {
-        this.routes.forEach((routes: Routes) => {
+        this.routes.forEach((routes: Controllers) => {
             this.createAction(mapRoute(routes));
         });
     }

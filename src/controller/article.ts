@@ -14,6 +14,8 @@ const validator = new Validator();
 
 @Controller({ prefix: '/article' })
 export default class Article {
+    model: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
+
     /**
      * 获取文章列表
      * @query pageSize 分页大小
@@ -39,13 +41,12 @@ export default class Article {
             pageSize = -1;
         }
 
-        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
         const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const total: number = await articleInst.count();
+            const total: number = await this.model.count();
             const arts: ArticleEntity[] = pageSize === -1
-                ? await articleInst.findAll()
-                : await articleInst.findAllWithPaging(pageNo - 1, pageSize);
+                ? await this.model.findAll()
+                : await this.model.findAllWithPaging(pageNo - 1, pageSize);
 
             ctx.body = resReturn({
                 list: await Promise.all(arts.map(async (art: any) => {
@@ -70,10 +71,8 @@ export default class Article {
      */
     @Get('/timeline')
     async getAllArtsWithTimeline(ctx: Koa.Context) {
-        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
-
         try {
-            const articles = await articleInst.timeline();
+            const articles = await this.model.timeline();
             if (articles && articles.length) {
                 const yearList = [...new Set(articles.map(item => item._id.year))]
                     .sort((a, b) => b - a)
@@ -113,16 +112,15 @@ export default class Article {
     })
     async getArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
-        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
         const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const art = await articleInst.findById(artId);
+            const art = await this.model.findById(artId);
             if (!art) {
                 ctx.body = resReturn(null, 400, '文章不存在');
                 return;
             }
             art.meta.views++;
-            await articleInst.save(art);
+            await this.model.save(art);
             ctx.body = resReturn({
                 ...art,
                 tags: (art.tags && art.tags.length)
@@ -154,7 +152,6 @@ export default class Article {
             state = 1, publish = 1, type = 1, tags
         } = ctx.request.body;
         const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
-        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
         const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
             const article: ArticleEntity = articleRepo.create({
@@ -176,7 +173,7 @@ export default class Article {
                 ctx.body = resReturn(validateErr.map(e => e.constraints), 400, '文章发布失败');
                 return;
             }
-            await articleInst.save(article);
+            await this.model.save(article);
             ctx.body = resReturn({
                 ...article,
                 tags: await tagInst.findByIds(article.tags)
@@ -195,10 +192,9 @@ export default class Article {
     async updateArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
         const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
-        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
         const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
-            const article: ArticleEntity = await articleInst.findById(artId);
+            const article: ArticleEntity = await this.model.findById(artId);
             if (!article) {
                 ctx.body = resReturn(null, 400, '文章不存在');
                 return;
@@ -222,7 +218,7 @@ export default class Article {
                 ctx.body = resReturn(validateErr.map(e => e.constraints), 400, '文章更新失败');
                 return;
             }
-            await articleInst.save(updateArticle);
+            await this.model.save(updateArticle);
             ctx.body = resReturn({
                 ...updateArticle,
                 tags: await tagInst.findByIds(article.tags)
@@ -236,14 +232,13 @@ export default class Article {
     @Del('/:artId')
     async delArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
-        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
         try {
-            const res = await articleInst.findById(artId);
+            const res = await this.model.findById(artId);
             if (!res) {
                 ctx.body = resReturn(null, 400, '文章不存在');
                 return;
             }
-            await articleInst.delete(artId);
+            await this.model.delete(artId);
             ctx.body = resReturn(null);
         } catch (err) {
             ctx.body = resReturn(null, 500, '服务器内部错误');

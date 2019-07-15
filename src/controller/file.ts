@@ -33,6 +33,8 @@ const upload = multer({
 
 @Controller({ prefix: '/upload' })
 export default class File {
+    model: FileModel = models.getInstance<FileModel>(FileModel);
+
     @Get('/')
     async getUploadFileList(ctx: Koa.Context) {
         let {
@@ -49,11 +51,10 @@ export default class File {
             pageSize = -1;
         }
 
-        const fileInst: FileModel = models.getInstance<FileModel>(FileModel);
         try {
             const files: [FileEntity[], number] = pageSize === -1
-                ? await fileInst.findAndCount(0, Infinity)
-                : await fileInst.findAndCount(pageNo - 1, pageSize);
+                ? await this.model.findAndCount(0, Infinity)
+                : await this.model.findAndCount(pageNo - 1, pageSize);
 
             ctx.body = resReturn({
                 list: files[0],
@@ -82,7 +83,6 @@ export default class File {
             originalname, filename, path, size
         } = (<any>ctx.req).file;
         const fileRepo = getMongoRepository<FileEntity>(FileEntity);
-        const fileInst: FileModel = models.getInstance<FileModel>(FileModel);
         try {
             const file = fileRepo.create({
                 originName: originalname,
@@ -95,7 +95,7 @@ export default class File {
                 ctx.body = resReturn(validateErr.map(e => e.constraints), 400, '上传文件失败失败');
                 return;
             }
-            await fileInst.save(file);
+            await this.model.save(file);
             ctx.body = resReturn(file);
         } catch (error) {
             log(error, 'error');
