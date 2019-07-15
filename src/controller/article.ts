@@ -16,6 +16,8 @@ const validator = new Validator();
 export default class Article {
     model: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
 
+    tagModel: TagModel = models.getInstance<TagModel>(TagModel);
+
     /**
      * 获取文章列表
      * @query pageSize 分页大小
@@ -41,7 +43,6 @@ export default class Article {
             pageSize = -1;
         }
 
-        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
             const total: number = await this.model.count();
             const arts: ArticleEntity[] = pageSize === -1
@@ -50,7 +51,8 @@ export default class Article {
 
             ctx.body = resReturn({
                 list: await Promise.all(arts.map(async (art: any) => {
-                    art.tags && art.tags.length && (art.tags = await tagInst.findByIds(art.tags));
+                    art.tags && art.tags.length
+                        && (art.tags = await this.tagModel.findByIds(art.tags));
                     return art;
                 })),
                 pagination: {
@@ -112,7 +114,6 @@ export default class Article {
     })
     async getArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
-        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
             const art = await this.model.findById(artId);
             if (!art) {
@@ -124,7 +125,7 @@ export default class Article {
             ctx.body = resReturn({
                 ...art,
                 tags: (art.tags && art.tags.length)
-                    ? await tagInst.findByIds(art.tags)
+                    ? await this.tagModel.findByIds(art.tags)
                     : []
             });
         } catch (error) {
@@ -152,7 +153,6 @@ export default class Article {
             state = 1, publish = 1, type = 1, tags
         } = ctx.request.body;
         const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
-        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
             const article: ArticleEntity = articleRepo.create({
                 title,
@@ -176,7 +176,7 @@ export default class Article {
             await this.model.save(article);
             ctx.body = resReturn({
                 ...article,
-                tags: await tagInst.findByIds(article.tags)
+                tags: await this.tagModel.findByIds(article.tags)
             });
         } catch (error) {
             log(error, 'error');
@@ -192,7 +192,6 @@ export default class Article {
     async updateArt(ctx: Koa.Context) {
         const { artId } = ctx.params;
         const articleRepo: MongoRepository<ArticleEntity> = getMongoRepository(ArticleEntity);
-        const tagInst: TagModel = models.getInstance<TagModel>(TagModel);
         try {
             const article: ArticleEntity = await this.model.findById(artId);
             if (!article) {
@@ -221,7 +220,7 @@ export default class Article {
             await this.model.save(updateArticle);
             ctx.body = resReturn({
                 ...updateArticle,
-                tags: await tagInst.findByIds(article.tags)
+                tags: await this.tagModel.findByIds(article.tags)
             });
         } catch (error) {
             log(error, 'error');

@@ -3,6 +3,8 @@ import { getMongoRepository, MongoRepository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import { resReturn, log, md5Decode } from '../utils/index';
 import AuthEntity from '../entity/auth';
+import models from '../models';
+import AuthModel from '../models/auth';
 import {
     Controller, Get, Post, Put, Patch
 } from '../decorators/router-decorator';
@@ -10,19 +12,22 @@ import { config } from '../config';
 
 @Controller({ prefix: '' })
 export default class Auth {
+    model: AuthModel = models.getInstance<AuthModel>(AuthModel);
+
     // 初始化管理员账户中间件
     static async initAdmin(ctx: Koa.Context, next: () => Promise<any>) {
         const username = config.defaultUsername;
         const password = md5Decode(config.defaultPassword);
         const authRepo: MongoRepository<AuthEntity> = getMongoRepository(AuthEntity);
+        const authInst: AuthModel = models.getInstance<AuthModel>(AuthModel);
         try {
-            const res = await authRepo.count();
+            const res = await authInst.count();
             if (!res) {
                 const user = authRepo.create({
                     username,
                     password
                 });
-                await authRepo.save(user);
+                await authInst.save(user);
                 log('初始化admin管理员账户成功');
             }
         } catch (error) {
@@ -39,10 +44,9 @@ export default class Auth {
     @Post('/login')
     async login(ctx: Koa.Context) {
         const { username, password } = ctx.request.body;
-        const authRepo: MongoRepository<AuthEntity> = getMongoRepository(AuthEntity);
 
         try {
-            const auth: AuthEntity = await authRepo.findOne({ username });
+            const auth: AuthEntity = await this.model.findByUsername(username);
             if (!auth) {
                 ctx.body = resReturn(null, 400, '用户名不存在');
                 return;
@@ -81,7 +85,7 @@ export default class Auth {
         const authRepo: MongoRepository<AuthEntity> = getMongoRepository(AuthEntity);
 
         try {
-            const user = await authRepo.findOne({ username });
+            const user = await this.model.findByUsername(username);
             if (!user) {
                 ctx.body = resReturn(null, 400, '用户名不存在');
                 return;
@@ -92,7 +96,7 @@ export default class Auth {
                 slogan,
                 gravatar
             });
-            await authRepo.save(updateUser);
+            await this.model.save(updateUser);
             ctx.body = resReturn({
                 username: updateUser.username,
                 name: updateUser.name,
@@ -116,7 +120,7 @@ export default class Auth {
         const { username, oldPass, newPass } = ctx.request.body;
         const authRepo: MongoRepository<AuthEntity> = getMongoRepository(AuthEntity);
         try {
-            const user = await authRepo.findOne({ username });
+            const user = await this.model.findByUsername(username);
             if (!user) {
                 ctx.body = resReturn(null, 400, '用户名不存在');
                 return;
@@ -132,7 +136,7 @@ export default class Auth {
             const updateUser = authRepo.merge(user, {
                 password: md5Decode(newPass)
             });
-            await authRepo.save(updateUser);
+            await this.model.save(updateUser);
             ctx.body = resReturn({
                 username: updateUser.username,
                 name: updateUser.name,

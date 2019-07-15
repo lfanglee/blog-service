@@ -16,6 +16,8 @@ const validator = new Validator();
 export default class Tag {
     model: TagModel = models.getInstance<TagModel>(TagModel);
 
+    articleModel: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
+
     /**
      * 获取tags GET
      * @query pageSize 分页大小，默认取全部
@@ -37,7 +39,6 @@ export default class Tag {
             pageSize = -1;
         }
 
-        const articleInst: ArticleModel = models.getInstance<ArticleModel>(ArticleModel);
         try {
             const tagsTotal = await this.model.count();
             const tags = pageSize === -1
@@ -46,7 +47,7 @@ export default class Tag {
             ctx.body = resReturn({
                 tags: await Promise.all(tags.map(async (tag: TagEntity) => ({
                     ...tag,
-                    count: (await articleInst.findByTagAndCount(tag))[1]
+                    count: (await this.articleModel.findByTagAndCount(tag))[1]
                 }))),
                 pagination: {
                     total: tagsTotal,
