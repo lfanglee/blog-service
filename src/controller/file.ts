@@ -1,6 +1,7 @@
 import * as Koa from 'koa';
 import * as multer from 'koa-multer';
 import * as fs from 'fs';
+import * as pathUtil from 'path';
 import { getMongoRepository } from 'typeorm';
 import { validate, Validator } from 'class-validator';
 import {
@@ -115,6 +116,13 @@ export default class File {
                 return;
             }
             await this.model.delete(fileId);
+            fs.unlinkSync(res.path);
+            try {
+                const dirname = pathUtil.dirname(res.path);
+                fs.rmdirSync(dirname);
+            } catch (e) {
+                console.log(e);
+            }
             ctx.body = resReturn(null);
         } catch (err) {
             ctx.body = resReturn(null, 500, '服务器内部错误');
