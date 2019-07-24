@@ -14,9 +14,21 @@ export default class FileModel {
         return files;
     }
 
+    public async findById(fileId: string) {
+        const fileRepo = getMongoRepository<File>(File);
+        const file = await fileRepo.findOne(fileId);
+        return file;
+    }
+
     public async save(file: File) {
         const fileRepo = getMongoRepository<File>(File);
         const res = await fileRepo.save(file);
+        return res;
+    }
+
+    public async delete(id: string) {
+        const fileRepo = getMongoRepository<File>(File);
+        const res = await fileRepo.delete(id);
         return res;
     }
 }
