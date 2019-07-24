@@ -1,6 +1,9 @@
 import { getMongoRepository } from 'typeorm';
+import * as MarkdownIt from 'markdown-it';
 import Article from '../entity/article';
 import Tag from '../entity/tag';
+
+const md = new MarkdownIt();
 
 export default class ArticleModel {
     public async count() {
@@ -76,6 +79,7 @@ export default class ArticleModel {
 
     public async save(article: Article) {
         const articleRepo = getMongoRepository<Article>(Article);
+        article.descript = md.render(article.content).replace(/<[^>]*>/g, '').slice(0, 135);
         const res = await articleRepo.save(article);
         return res;
     }
