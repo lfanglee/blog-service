@@ -58,6 +58,10 @@ export default class Auth {
                     exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7)
                 }, config.jwtSecret);
                 ctx.body = resReturn({
+                    username: auth.username,
+                    name: auth.name,
+                    gravatar: auth.gravatar,
+                    slogan: auth.slogan,
                     token,
                     activeTime: Math.floor(Date.now() / 1000 + (60 * 60 * 24 * 7))
                 });
