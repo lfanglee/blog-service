@@ -31,6 +31,28 @@ export default class ArticleModel {
         return articles;
     }
 
+    public async findAndCount(obj: Partial<Article & {
+        pageNo: number;
+        pageSize: number;
+    }>) {
+        const articleRepo = getMongoRepository<Article>(Article);
+        const {
+            pageNo, pageSize, tags, ...rest
+        } = obj;
+        const findCondition: any = {
+            ...rest
+        };
+        if (tags) {
+            findCondition.tags = { $in: [tags] };
+        }
+        const articles = await articleRepo.findAndCount({
+            skip: pageNo * pageSize,
+            take: pageSize,
+            where: findCondition
+        });
+        return articles;
+    }
+
     public async findAllWithPaging(page = 0, limit = 10) {
         const articleRepo = getMongoRepository<Article>(Article);
         const tags = await articleRepo.find({
