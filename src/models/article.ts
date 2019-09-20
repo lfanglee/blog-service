@@ -18,17 +18,6 @@ export default class ArticleModel {
         return articles;
     }
 
-    public async findAllFinishedAndPublished() {
-        const articleRepo = getMongoRepository<Article>(Article);
-        const articles = await articleRepo.find({
-            where: {
-                state: 1,
-                publish: 1
-            }
-        });
-        return articles;
-    }
-
     public async findById(articleId: string) {
         const articleRepo = getMongoRepository<Article>(Article);
         const article = await articleRepo.findOne(articleId);
@@ -70,22 +59,6 @@ export default class ArticleModel {
     public async findAllWithPaging(page = 0, limit = 10) {
         const articleRepo = getMongoRepository<Article>(Article);
         const tags = await articleRepo.find({
-            skip: page * limit,
-            take: limit,
-            order: {
-                create_at: 'DESC'
-            }
-        });
-        return tags;
-    }
-
-    public async findAllFinishedAndPublishWithPaging(page = 0, limit = 10) {
-        const articleRepo = getMongoRepository<Article>(Article);
-        const tags = await articleRepo.find({
-            where: {
-                state: 1,
-                publish: 1
-            },
             skip: page * limit,
             take: limit,
             order: {
