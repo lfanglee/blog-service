@@ -1,6 +1,9 @@
 import { getMongoRepository } from 'typeorm';
+import * as MarkdownIt from 'markdown-it';
 import Article from '../entity/article';
 import Tag from '../entity/tag';
+
+const md = new MarkdownIt();
 
 export default class ArticleModel {
     public async count() {
@@ -12,6 +15,17 @@ export default class ArticleModel {
     public async findAll() {
         const articleRepo = getMongoRepository<Article>(Article);
         const articles = await articleRepo.find();
+        return articles;
+    }
+
+    public async findAllFinishedAndPublished() {
+        const articleRepo = getMongoRepository<Article>(Article);
+        const articles = await articleRepo.find({
+            where: {
+                state: 1,
+                publish: 1
+            }
+        });
         return articles;
     }
 
@@ -65,6 +79,22 @@ export default class ArticleModel {
         return tags;
     }
 
+    public async findAllFinishedAndPublishWithPaging(page = 0, limit = 10) {
+        const articleRepo = getMongoRepository<Article>(Article);
+        const tags = await articleRepo.find({
+            where: {
+                state: 1,
+                publish: 1
+            },
+            skip: page * limit,
+            take: limit,
+            order: {
+                create_at: 'DESC'
+            }
+        });
+        return tags;
+    }
+
     public async timeline() {
         const articleRepo = getMongoRepository<Article>(Article);
         const articles = await articleRepo.aggregate([
@@ -98,6 +128,7 @@ export default class ArticleModel {
 
     public async save(article: Article) {
         const articleRepo = getMongoRepository<Article>(Article);
+        article.descript = md.render(article.content).replace(/<[^>]*>/g, '').slice(0, 135);
         const res = await articleRepo.save(article);
         return res;
     }

@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
     },
     filename(ctx, file, cb) {
         const fileNameArr = file.originalname.split('.');
-        cb(null, `${Date.now()}.${fileNameArr[fileNameArr.length - 1]}`);
+        cb(null, `${Date.now()}${Math.floor(10000 * Math.random())}.${fileNameArr[fileNameArr.length - 1]}`);
     }
 });
 const upload = multer({
