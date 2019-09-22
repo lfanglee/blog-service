@@ -18,17 +18,6 @@ export default class ArticleModel {
         return articles;
     }
 
-    public async findAllFinishedAndPublished() {
-        const articleRepo = getMongoRepository<Article>(Article);
-        const articles = await articleRepo.find({
-            where: {
-                state: 1,
-                publish: 1
-            }
-        });
-        return articles;
-    }
-
     public async findById(articleId: string) {
         const articleRepo = getMongoRepository<Article>(Article);
         const article = await articleRepo.findOne(articleId);
@@ -45,25 +34,31 @@ export default class ArticleModel {
         return articles;
     }
 
+    public async findAndCount(obj: Partial<Article & {
+        pageNo: number;
+        pageSize: number;
+    }>) {
+        const articleRepo = getMongoRepository<Article>(Article);
+        const {
+            pageNo, pageSize, tags, ...rest
+        } = obj;
+        const findCondition: any = {
+            ...rest
+        };
+        if (tags) {
+            findCondition.tags = { $in: [tags] };
+        }
+        const articles = await articleRepo.findAndCount({
+            skip: pageNo * pageSize,
+            take: pageSize,
+            where: findCondition
+        });
+        return articles;
+    }
+
     public async findAllWithPaging(page = 0, limit = 10) {
         const articleRepo = getMongoRepository<Article>(Article);
         const tags = await articleRepo.find({
-            skip: page * limit,
-            take: limit,
-            order: {
-                create_at: 'DESC'
-            }
-        });
-        return tags;
-    }
-
-    public async findAllFinishedAndPublishWithPaging(page = 0, limit = 10) {
-        const articleRepo = getMongoRepository<Article>(Article);
-        const tags = await articleRepo.find({
-            where: {
-                state: 1,
-                publish: 1
-            },
             skip: page * limit,
             take: limit,
             order: {

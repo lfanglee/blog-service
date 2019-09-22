@@ -22,7 +22,6 @@ export default class Article {
      * 获取文章列表
      * @query pageSize 分页大小
      * @query pageNo 分页页数
-     * @query keyword 关键词
      * @query state 文章状态
      * @query publish 发布状态
      * @query tag 标签
@@ -32,6 +31,11 @@ export default class Article {
         let {
             pageNo = 1,
             pageSize = 10
+        } = ctx.query;
+        const {
+            state = 1,
+            publish = 1,
+            tag
         } = ctx.query;
         pageNo = +pageNo;
         pageSize = +pageSize;
@@ -44,10 +48,13 @@ export default class Article {
         }
 
         try {
-            const total: number = await this.model.count();
-            const arts: ArticleEntity[] = pageSize === -1
-                ? await this.model.findAll()
-                : await this.model.findAllWithPaging(pageNo - 1, pageSize);
+            const [arts, total] = await this.model.findAndCount({
+                pageNo: pageNo - 1,
+                pageSize,
+                state: +state,
+                publish: +publish,
+                tags: tag
+            });
 
             ctx.body = resReturn({
                 list: await Promise.all(arts.map(async (art: any) => {
