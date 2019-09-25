@@ -28,4 +28,9 @@ export default class Auth {
         }
         return false;
     }
+
+    static getVerifiedInfo(ctx: Koa.Request) {
+        const token = Auth.authToken(ctx);
+        return token && jwt.verify(token, config.jwtSecret);
+    }
 }

@@ -2,6 +2,7 @@ import * as Koa from 'koa';
 import { getMongoRepository, MongoRepository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import { resReturn, log, md5Decode } from '../utils/index';
+import AuthUtil from '../utils/auth';
 import AuthEntity from '../entity/auth';
 import models from '../models';
 import AuthModel from '../models/auth';
@@ -53,7 +54,7 @@ export default class Auth {
             }
             if (auth.password === md5Decode(password)) {
                 const token = jwt.sign({
-                    name: auth.name,
+                    username: auth.username,
                     password: auth.password,
                     exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7)
                 }, config.jwtSecret);
@@ -115,13 +116,13 @@ export default class Auth {
 
     /**
      * 修改密码
-     * @body username 用户名
      * @body oldPass 旧密码
      * @body newPass 新密码
      */
     @Patch('/auth')
     async updatePassword(ctx: Koa.Context) {
-        const { username, oldPass, newPass } = ctx.request.body;
+        const { oldPass, newPass } = ctx.request.body;
+        const { username } = <any>AuthUtil.getVerifiedInfo(ctx.request);
         const authRepo: MongoRepository<AuthEntity> = getMongoRepository(AuthEntity);
         try {
             const user = await this.model.findByUsername(username);
@@ -141,11 +142,18 @@ export default class Auth {
                 password: md5Decode(newPass)
             });
             await this.model.save(updateUser);
+            const token = jwt.sign({
+                username: updateUser.username,
+                password: updateUser.password,
+                exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7)
+            }, config.jwtSecret);
             ctx.body = resReturn({
                 username: updateUser.username,
                 name: updateUser.name,
                 gravatar: updateUser.gravatar,
-                slogan: updateUser.slogan
+                slogan: updateUser.slogan,
+                token,
+                activeTime: Math.floor(Date.now() / 1000 + (60 * 60 * 24 * 7))
             });
         } catch (error) {
             log(error, 'error');
